@@ -1,0 +1,88 @@
+object Versions {
+
+    const val kotlin = "1.5.10"
+    const val coroutines = "1.5.0-native-mt"
+
+    object Android {
+
+        const val compileSdk = 30
+        const val minSdk = 21
+        const val targetSdk = 29
+        const val buildTools = "30.0.3"
+        const val androidGradlePlugin = "4.2.1"
+
+        const val appCompat = "1.3.0"
+        const val constraintLayout = "2.0.4"
+        const val core = "1.5.0"
+        const val lifecycle = "2.3.1"
+        const val recyclerView = "1.2.0"
+        const val materialComponents = "1.3.0"
+
+        const val navigation = "2.3.5"
+
+        const val test = "1.3.0"
+        const val testExt = "1.1.2"
+    }
+
+    object Testing {
+        const val junit = "4.13.2"
+    }
+}
+
+object Dependencies {
+
+    const val androidGradlePlugin =
+        "com.android.tools.build:gradle:${Versions.Android.androidGradlePlugin}"
+
+    object KotlinTest {
+        const val common = "org.jetbrains.kotlin:kotlin-test-common:${Versions.kotlin}"
+        const val annotations =
+            "org.jetbrains.kotlin:kotlin-test-annotations-common:${Versions.kotlin}"
+        const val jvm = "org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}"
+        const val junit = "org.jetbrains.kotlin:kotlin-test-junit:${Versions.kotlin}"
+    }
+
+    object Coroutines {
+        const val common = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}"
+        const val android =
+            "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}"
+        const val test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}"
+    }
+
+    object Android {
+
+        const val appCompat = "androidx.appcompat:appcompat:${Versions.Android.appCompat}"
+        const val coreKtx = "androidx.core:core-ktx:${Versions.Android.core}"
+        const val constraintLayout =
+            "androidx.constraintlayout:constraintlayout:${Versions.Android.constraintLayout}"
+        const val recyclerView =
+            "androidx.recyclerview:recyclerview:${Versions.Android.recyclerView}"
+
+        const val lifecycleRuntime =
+            "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.Android.lifecycle}"
+        const val lifecycleViewModel =
+            "androidx.lifecycle:lifecycle-viewmodel-ktx:${Versions.Android.lifecycle}"
+        const val lifecycleViewModelExtensions =
+            "androidx.lifecycle:lifecycle-viewmodel-ktx:${Versions.Android.lifecycle}"
+
+        const val materialComponents =
+            "com.google.android.material:material:${Versions.Android.materialComponents}"
+
+        const val navigationFragment =
+            "androidx.navigation:navigation-fragment-ktx${Versions.Android.navigation}"
+        const val navigationUi =
+            "androidx.navigation:navigation-ui-ktx${Versions.Android.navigation}"
+    }
+
+    object AndroidTest {
+        const val core = "androidx.test:core:${Versions.Android.test}"
+        const val junit = "androidx.test.ext:junit:${Versions.Android.testExt}"
+        const val runner = "androidx.test:runner:${Versions.Android.test}"
+        const val rules = "androidx.test:rules:${Versions.Android.test}"
+    }
+
+    object Test {
+
+        const val junit = "junit:junit:${Versions.Testing.junit}"
+    }
+}
