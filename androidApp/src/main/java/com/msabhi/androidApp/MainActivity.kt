@@ -3,7 +3,7 @@ package com.msabhi.androidApp
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.msabhi.flywheel.Greeting
+import com.msabhi.flywheel.sample.Greeting
 
 fun greet(): String {
     return Greeting().greeting()

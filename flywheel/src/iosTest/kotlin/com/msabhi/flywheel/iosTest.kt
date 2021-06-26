@@ -1,5 +1,6 @@
 package com.msabhi.flywheel
 
+import com.msabhi.flywheel.sample.Greeting
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

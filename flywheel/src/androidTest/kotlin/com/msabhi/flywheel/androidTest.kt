@@ -1,5 +1,6 @@
 package com.msabhi.flywheel
 
+import com.msabhi.flywheel.sample.Greeting
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

@@ -1,5 +1,4 @@
-package com.msabhi.flywheel
-
+package com.msabhi.flywheel.sample
 
 class Greeting {
     fun greeting(): String {
