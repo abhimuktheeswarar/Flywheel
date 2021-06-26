@@ -20,12 +20,13 @@ import common.TestCounterAction
 import common.TestCounterState
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.Assert
+import org.junit.Test
 
-class StateReserveReplayTest {
+class ColdSideEffectReplayTest {
 
     @Test
     fun replayTest() = runBlocking {
@@ -71,15 +72,15 @@ class StateReserveReplayTest {
                 }
             }
 
-            // One more scope for subscribers, to ensure subscribers are finished before cancelling store scope
+            // One more scope for subscribers, to ensure subscribers are finished before cancelling StateReserve scope
             coroutineScope {
                 repeat(subscribers) {
                     launch {
                         // Since only increase by 1 reducers are applied
                         // it's expected to see monotonously increasing sequence with no missing values
-                        stateReserve.states.takeWhile { it.count < N }.toList()
-                            .zipWithNext { a, b ->
-                                assertEquals(a.count + 1, b.count)
+                        stateReserve.coldActions.map { stateReserve.awaitState() }
+                            .takeWhile { it.count < N }.toList().zipWithNext { a, b ->
+                                Assert.assertEquals(a.count + 1, b.count)
                             }
                     }
                 }
@@ -87,12 +88,9 @@ class StateReserveReplayTest {
             scope.cancel()
         }
 
-    /**
-     * Tests that cancellation during first emit in StateReserve.states flow doesn't block other collectors forever
-     * Will fail if stateChannel subscription will be collected without finally block in StateReserve.states builder
-     */
+
     @Suppress("DeferredResultUnused")
-    @org.junit.Test(timeout = 10_000)
+    @Test(timeout = 10_000)
     fun testProperCancellation() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + Job())
         val reduce: Reduce<TestCounterState> = { action, state ->
@@ -112,19 +110,22 @@ class StateReserveReplayTest {
                 middlewares = null)
 
         val collectJob = async(start = CoroutineStart.UNDISPATCHED) {
-            stateReserve.states.collect {
+            stateReserve.coldActions.map { stateReserve.state() }.collect {
                 delay(Long.MAX_VALUE)
             }
         }
         collectJob.cancel()
 
-        val N = 200
+        val n = 200
         coroutineScope {
             async(start = CoroutineStart.UNDISPATCHED) {
-                stateReserve.states.takeWhile { it.count < N }.collect { }
+                stateReserve.coldActions.map { stateReserve.state() }.takeWhile { it.count < n }
+                    .collect {
+                        // no-op
+                    }
             }
             async {
-                repeat(N) {
+                repeat(n) {
                     stateReserve.dispatch(TestCounterAction.IncrementAction)
                 }
             }
@@ -132,4 +133,3 @@ class StateReserveReplayTest {
         scope.cancel()
     }
 }
-
