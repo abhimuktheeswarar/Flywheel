@@ -19,7 +19,9 @@ package com.msabhi.flywheel.attachments
 import androidx.lifecycle.ViewModel
 import com.msabhi.flywheel.*
 import com.msabhi.flywheel.utilities.assertImmutability
+import com.msabhi.flywheel.utilities.getDefaultScope
 import com.msabhi.flywheel.utilities.getDefaultStateReserveConfig
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
@@ -32,41 +34,46 @@ import kotlinx.coroutines.launch
  */
 open class FlywheelViewModel<S : State>(
     private val initialState: S,
-    reduce: Reduce<S>? = null,
-    config: StateReserveConfig = getDefaultStateReserveConfig(),
+    private val reduce: Reduce<S>? = null,
+    private val middlewares: List<Middleware<S>>? = null,
+    stateReserve: StateReserve<S>? = null,
+    scope: CoroutineScope = getDefaultScope(),
+    private val config: StateReserveConfig = getDefaultStateReserveConfig(scope),
 ) : ViewModel() {
 
-    private val store = StateReserve(
-        initialState = initialState,
-        reduce = reduce ?: ::reduce,
-        middlewares = null,
-        config = config
-    )
+    private val stateReserve = stateReserve ?: createStateReserve()
 
     protected val TAG by lazy { this::class.simpleName ?: "FlywheelViewModel" }
-    protected val hotActions: Flow<Action> = this.store.hotActions
-    protected val coldActions: Flow<Action> = this.store.coldActions
-    protected val scope = this.store.config.scope
+    protected val hotActions: Flow<Action> = this.stateReserve.hotActions
+    protected val coldActions: Flow<Action> = this.stateReserve.coldActions
+    protected val scope = this.stateReserve.config.scope
 
-    val states: Flow<S> = this.store.states
+    val states: Flow<S> = this.stateReserve.states
     val eventActions: Flow<EventAction> = hotActions.filterIsInstance()
     val navigateActions: Flow<NavigateAction> = hotActions.filterIsInstance()
 
     init {
 
-        if (this.store.config.debugMode) {
-            this.store.config.scope.launch(Dispatchers.Default) {
+        if (this.stateReserve.config.debugMode) {
+            this.stateReserve.config.scope.launch(Dispatchers.Default) {
                 this@FlywheelViewModel.initialState::class.assertImmutability()
             }
         }
     }
 
-    fun state() = store.state()
+    private fun createStateReserve() = StateReserve(
+        initialState = initialState,
+        reduce = reduce ?: ::reduce,
+        middlewares = middlewares,
+        config = config
+    )
 
-    suspend fun awaitState() = store.awaitState()
+    fun state() = stateReserve.state()
+
+    suspend fun awaitState() = stateReserve.awaitState()
 
     fun dispatch(action: Action) {
-        store.dispatch(action)
+        stateReserve.dispatch(action)
     }
 
     protected open fun reduce(action: Action, state: S): S {
@@ -75,6 +82,6 @@ open class FlywheelViewModel<S : State>(
 
     override fun onCleared() {
         super.onCleared()
-        store.terminate()
+        stateReserve.terminate()
     }
 }

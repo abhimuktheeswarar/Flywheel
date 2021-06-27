@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<!--
   ~ Copyright (C) 2021 Abhi Muktheeswarar
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,6 @@
   -->
 
 <resources>
-
-    <style name="IconOnlyButton" parent="Widget.MaterialComponents.Button">
-        <item name="android:minWidth">0dp</item>
-        <item name="iconPadding">0dp</item>
-        <item name="iconGravity">textStart</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetLeft">0dp</item>
-        <item name="android:insetRight">0dp</item>
-    </style>
-
+    <string name="app_name">Flywheel</string>
+    <string name="counter_example">counter example</string>
 </resources>

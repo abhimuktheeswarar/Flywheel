@@ -14,20 +14,8 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.utilities
+package com.msabhi.androidApp.counter.entities
 
-import com.msabhi.flywheel.BuildConfig
-import com.msabhi.flywheel.StateReserveConfig
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.msabhi.flywheel.State
 
-fun getDefaultScope() =
-    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    })
-
-fun getDefaultStateReserveConfig(scope: CoroutineScope = getDefaultScope()) =
-    StateReserveConfig(scope = scope,
-        debugMode = BuildConfig.DEBUG)
-
+data class CounterState(val counter: Int = 0) : State

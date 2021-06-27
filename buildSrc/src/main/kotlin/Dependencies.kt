@@ -16,7 +16,7 @@
 
 object Versions {
 
-    const val kotlin = "1.5.10"
+    const val kotlin = "1.5.20"
     const val coroutines = "1.5.0-native-mt"
 
     object Android {
@@ -28,8 +28,10 @@ object Versions {
         const val androidGradlePlugin = "4.2.1"
 
         const val appCompat = "1.3.0"
-        const val constraintLayout = "2.0.4"
         const val core = "1.5.0"
+        const val activityKtx = "1.2.3"
+        const val fragmentKtx = "1.3.5"
+        const val constraintLayout = "2.0.4"
         const val lifecycle = "2.3.1"
         const val recyclerView = "1.2.0"
         const val materialComponents = "1.3.0"
@@ -69,6 +71,8 @@ object Dependencies {
 
         const val appCompat = "androidx.appcompat:appcompat:${Versions.Android.appCompat}"
         const val coreKtx = "androidx.core:core-ktx:${Versions.Android.core}"
+        const val activityKtx = "androidx.activity:activity-ktx:${Versions.Android.activityKtx}"
+        const val fragmentKtx = "androidx.fragment:fragment-ktx:${Versions.Android.fragmentKtx}"
         const val constraintLayout =
             "androidx.constraintlayout:constraintlayout:${Versions.Android.constraintLayout}"
         const val recyclerView =

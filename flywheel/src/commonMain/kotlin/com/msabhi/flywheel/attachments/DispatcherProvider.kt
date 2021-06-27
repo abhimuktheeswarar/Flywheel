@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
+@file:Suppress("PropertyName")
+
 package com.msabhi.flywheel.attachments
 
 import kotlinx.coroutines.CoroutineDispatcher
 
-expect class DispatcherProvider {
+interface DispatcherProvider {
 
     val Main: CoroutineDispatcher
     val IO: CoroutineDispatcher
     val Default: CoroutineDispatcher
     val Unconfined: CoroutineDispatcher
 }
+
+expect object DispatcherProviderImpl : DispatcherProvider

@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.utilities
+package com.msabhi.androidApp.counter.entities
 
-import com.msabhi.flywheel.BuildConfig
-import com.msabhi.flywheel.StateReserveConfig
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.msabhi.flywheel.Action
 
-fun getDefaultScope() =
-    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    })
+sealed interface CounterAction : Action {
 
-fun getDefaultStateReserveConfig(scope: CoroutineScope = getDefaultScope()) =
-    StateReserveConfig(scope = scope,
-        debugMode = BuildConfig.DEBUG)
+    object IncrementAction : CounterAction
 
+    object DecrementAction : CounterAction
+
+    object ResetAction : CounterAction
+
+    data class ForceUpdateAction(val count: Int) : CounterAction
+}

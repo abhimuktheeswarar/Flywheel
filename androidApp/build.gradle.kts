@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("kotlin-android")
 }
 
 group = "com.msabhi"
@@ -33,6 +34,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
     buildFeatures {
         viewBinding = true
     }
@@ -43,6 +48,8 @@ dependencies {
     implementation(project(":flywheel"))
     implementation(Dependencies.Android.appCompat)
     implementation(Dependencies.Android.coreKtx)
+    implementation(Dependencies.Android.activityKtx)
+    implementation(Dependencies.Android.fragmentKtx)
     implementation(Dependencies.Android.constraintLayout)
     implementation(Dependencies.Android.materialComponents)
     testImplementation(Dependencies.Test.junit)

@@ -19,10 +19,10 @@ package com.msabhi.flywheel.attachments
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
-actual class DispatcherProvider {
+actual object DispatcherProviderImpl : DispatcherProvider {
 
-    actual val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
-    actual val IO: CoroutineDispatcher by lazy { Dispatchers.Default }
-    actual val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
-    actual val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
+    override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
+    override val IO: CoroutineDispatcher by lazy { Dispatchers.Default }
+    override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
+    override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
 }

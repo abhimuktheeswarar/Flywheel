@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    tools:context=".counter.ui.CounterActivity">
+
+    <TextView
+        android:id="@+id/text_count"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="56dp"
+        android:gravity="center"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/button_increment"
+        app:layout_constraintStart_toEndOf="@id/button_decrement"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="0" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_decrement"
+        style="@style/IconOnlyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_round_remove_24"
+        app:layout_constraintBottom_toBottomOf="@id/text_count"
+        app:layout_constraintEnd_toStartOf="@id/text_count"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/text_count" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_increment"
+        style="@style/IconOnlyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_round_add_24"
+        app:layout_constraintBottom_toBottomOf="@id/text_count"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/text_count"
+        app:layout_constraintTop_toTopOf="@id/text_count" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_reset"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="reset"
+        app:layout_constraintEnd_toStartOf="@id/button_increment"
+        app:layout_constraintStart_toEndOf="@id/button_decrement"
+        app:layout_constraintTop_toBottomOf="@id/text_count"
+        tools:ignore="HardcodedText" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_show_toast"
+        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="56dp"
+        android:text="show toast"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/label_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time taken"
+        app:layout_constraintBottom_toTopOf="@id/text_time"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/text_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="NA"
+        app:layout_constraintBottom_toTopOf="@id/button_show_toast"
+        app:layout_constraintStart_toStartOf="@id/label_time"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/label_average_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Average time taken"
+        app:layout_constraintBottom_toTopOf="@id/text_average_time"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/text_average_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="NA"
+        app:layout_constraintBottom_toTopOf="@id/button_show_toast"
+        app:layout_constraintEnd_toEndOf="@id/label_average_time"
+        tools:ignore="HardcodedText" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

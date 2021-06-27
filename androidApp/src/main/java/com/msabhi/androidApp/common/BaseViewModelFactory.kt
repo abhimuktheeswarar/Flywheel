@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.attachments
+package com.msabhi.androidApp.common
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 
-actual class DispatcherProvider {
+class BaseViewModelFactory<T>(val creator: () -> T) : ViewModelProvider.Factory {
 
-    actual val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
-    actual val IO: CoroutineDispatcher by lazy { Dispatchers.IO }
-    actual val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
-    actual val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        return creator() as T
+    }
 }

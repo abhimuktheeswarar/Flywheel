@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.utilities
+package com.msabhi.flywheel.attachments
 
-import com.msabhi.flywheel.BuildConfig
-import com.msabhi.flywheel.StateReserveConfig
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
-fun getDefaultScope() =
-    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    })
+actual object DispatcherProviderImpl : DispatcherProvider {
 
-fun getDefaultStateReserveConfig(scope: CoroutineScope = getDefaultScope()) =
-    StateReserveConfig(scope = scope,
-        debugMode = BuildConfig.DEBUG)
-
+    override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
+    override val IO: CoroutineDispatcher by lazy { Dispatchers.IO }
+    override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
+    override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
+}
