@@ -83,6 +83,18 @@ val packForXcode by tasks.creating(Sync::class) {
 
 tasks.getByName("build").dependsOn(packForXcode)
 
-tasks.dokkaGfm.configure {
+tasks.dokkaHtml.configure {
     outputDirectory.set(rootDir.resolve("docs"))
 }
+
+/*
+tasks.dokkaGfm.configure {
+    outputDirectory.set(rootDir.resolve("docs"))
+    */
+/*dokkaSourceSets {
+        configureEach {
+            includes.from("packages.md", "extra.md")
+        }
+    }*//*
+
+}*/
