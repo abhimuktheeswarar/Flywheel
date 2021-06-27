@@ -3,6 +3,9 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
+    id("org.jetbrains.dokka") version Versions.dokka
+    id("maven-publish")
+    id("signing")
 }
 
 group = "com.msabhi"

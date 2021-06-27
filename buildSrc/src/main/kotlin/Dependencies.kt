@@ -18,6 +18,7 @@ object Versions {
 
     const val kotlin = "1.5.20"
     const val coroutines = "1.5.0-native-mt"
+    const val dokka = "1.4.32"
 
     object Android {
 
@@ -51,6 +52,7 @@ object Dependencies {
 
     const val androidGradlePlugin =
         "com.android.tools.build:gradle:${Versions.Android.androidGradlePlugin}"
+    const val dokka = "org.jetbrains.dokka:dokka-gradle-plugin:${Versions.dokka}"
 
     object KotlinTest {
         const val common = "org.jetbrains.kotlin:kotlin-test-common:${Versions.kotlin}"
