@@ -10,8 +10,11 @@ buildscript {
     }
 }
 
-group = "com.msabhi"
-version = "1.0.0-RC"
+val GROUP: String by project
+val VERSION_NAME: String by project
+
+group = GROUP
+version = VERSION_NAME
 
 allprojects {
     repositories {

@@ -17,13 +17,13 @@
 package com.msabhi.androidApp.counter.ui
 
 import android.content.Context
+import com.msabhi.androidApp.base.BaseViewModel
 import com.msabhi.androidApp.counter.domain.middleware.EventMiddleware
 import com.msabhi.androidApp.counter.domain.sideeffects.CounterColdSideEffect
 import com.msabhi.androidApp.counter.entities.CounterAction
 import com.msabhi.androidApp.counter.entities.CounterState
 import com.msabhi.flywheel.StateReserve
 import com.msabhi.flywheel.attachments.DispatcherProviderImpl
-import com.msabhi.flywheel.attachments.FlywheelViewModel
 import com.msabhi.flywheel.reducerForAction
 import com.msabhi.flywheel.utilities.getDefaultScope
 import com.msabhi.flywheel.utilities.getDefaultStateReserveConfig
@@ -31,7 +31,7 @@ import com.msabhi.flywheel.utilities.skipMiddleware
 import java.lang.ref.WeakReference
 
 class CounterViewModel(initialState: CounterState, stateReserve: StateReserve<CounterState>) :
-    FlywheelViewModel<CounterState>(
+    BaseViewModel<CounterState>(
         initialState = initialState,
         stateReserve = stateReserve) {
 
