@@ -71,7 +71,7 @@ class StateReserveReplayTest {
                 }
             }
 
-            // One more scope for subscribers, to ensure subscribers are finished before cancelling store scope
+            // One more scope for subscribers, to ensure subscribers are finished before cancelling stateReserve scope
             coroutineScope {
                 repeat(subscribers) {
                     launch {

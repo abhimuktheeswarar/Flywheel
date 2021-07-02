@@ -16,20 +16,11 @@
 
 package com.msabhi.flywheel.utilities
 
-import com.msabhi.flywheel.StateReserveConfig
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.msabhi.flywheel.State
 
-fun getDefaultScope() =
-    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    })
+interface StateType : State
 
-fun getDefaultStateReserveConfig(
-    scope: CoroutineScope = getDefaultScope(),
-    debugMode: Boolean = false,
-) =
-    StateReserveConfig(scope = scope,
-        debugMode = debugMode)
+interface Cancellable {
+    fun cancel()
+}
 

@@ -16,10 +16,11 @@
 
 package com.msabhi.flywheel.utilities
 
-import com.msabhi.flywheel.Action
-import com.msabhi.flywheel.Middleware
-import com.msabhi.flywheel.SkipReducer
-import com.msabhi.flywheel.State
+import com.msabhi.flywheel.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
 
 fun Action.name(): String = this::class.simpleName ?: "Action"
 
@@ -33,4 +34,18 @@ val skipMiddleware: Middleware<State> = { _, _ ->
         }
     }
 }
+
+fun getDefaultScope() =
+    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
+        throwable.printStackTrace()
+    })
+
+fun getMainScope() = MainScope()
+
+fun getDefaultStateReserveConfig(
+    scope: CoroutineScope = getDefaultScope(),
+    debugMode: Boolean = false,
+) =
+    StateReserveConfig(scope = scope,
+        debugMode = debugMode)
 

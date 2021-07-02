@@ -33,7 +33,7 @@ open class BaseViewModel<S : State>(
     private val middlewares: List<Middleware<S>>? = null,
     stateReserve: StateReserve<S>? = null,
     scope: CoroutineScope = getDefaultScope(),
-    private val config: StateReserveConfig = getDefaultStateReserveConfig(scope),
+    private val config: StateReserveConfig = getDefaultStateReserveConfig(scope, BuildConfig.DEBUG),
 ) : ViewModel() {
 
     private val stateReserve = stateReserve ?: createStateReserve()
