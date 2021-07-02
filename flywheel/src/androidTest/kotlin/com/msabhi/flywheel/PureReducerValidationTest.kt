@@ -16,8 +16,8 @@
 
 package com.msabhi.flywheel
 
-import common.TestCounterAction
-import common.TestCounterState
+import com.msabhi.flywheel.common.TestCounterAction
+import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import org.junit.Rule

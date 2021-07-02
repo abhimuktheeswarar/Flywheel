@@ -26,7 +26,7 @@ object Versions {
         const val minSdk = 21
         const val targetSdk = 29
         const val buildTools = "30.0.3"
-        const val androidGradlePlugin = "4.2.2"
+        const val androidGradlePlugin = "4.2.1"
 
         const val appCompat = "1.3.0"
         const val core = "1.5.0"
@@ -60,6 +60,7 @@ object Dependencies {
             "org.jetbrains.kotlin:kotlin-test-annotations-common:${Versions.kotlin}"
         const val jvm = "org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}"
         const val junit = "org.jetbrains.kotlin:kotlin-test-junit:${Versions.kotlin}"
+        const val js = "org.jetbrains.kotlin:kotlin-test-js:${Versions.kotlin}"
     }
 
     object Coroutines {

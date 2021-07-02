@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package common
+package com.msabhi.flywheel.base
 
-import com.msabhi.flywheel.Action
-import com.msabhi.flywheel.State
+import kotlinx.coroutines.CoroutineScope
 
-sealed interface TestCounterAction : Action {
-
-    object IncrementAction : TestCounterAction
-
-    object DecrementAction : TestCounterAction
-
-    object ResetAction : TestCounterAction
-
-    data class ForceUpdateAction(val count: Int) : TestCounterAction
+expect abstract class BaseTest() {
+    fun <T> runTest(block: suspend CoroutineScope.() -> T)
 }
-
-data class TestCounterState(val count: Int = 0, val updatedOn: Long = 0) : State

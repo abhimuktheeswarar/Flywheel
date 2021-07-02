@@ -86,15 +86,17 @@ kotlin {
                 implementation(Dependencies.AndroidTest.rules)
             }
         }
-        val androidMain by getting
+        val androidMain by getting {
+            dependsOn(jvmMain)
+        }
         val androidTest by getting {
             dependsOn(jvmTest)
         }
-        val jsMain by getting {
-            dependsOn(commonMain)
-        }
+        val jsMain by getting
         val jsTest by getting {
-            dependsOn(commonTest)
+            dependencies {
+                implementation(Dependencies.KotlinTest.js)
+            }
         }
         val nativeMain by creating {
             dependsOn(commonMain)

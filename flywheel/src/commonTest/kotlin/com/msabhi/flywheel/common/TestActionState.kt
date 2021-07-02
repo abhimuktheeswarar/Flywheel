@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.attachments
+package com.msabhi.flywheel.common
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
+import com.msabhi.flywheel.Action
+import com.msabhi.flywheel.State
 
-actual object DispatcherProviderImpl : DispatcherProvider {
+sealed interface TestCounterAction : Action {
 
-    override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
-    override val IO: CoroutineDispatcher by lazy { Dispatchers.IO }
-    override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
-    override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
+    object IncrementAction : TestCounterAction
+
+    object DecrementAction : TestCounterAction
+
+    object ResetAction : TestCounterAction
+
+    data class ForceUpdateAction(val count: Int) : TestCounterAction
 }
+
+data class TestCounterState(val count: Int = 0, val updatedOn: Long = 0) : State

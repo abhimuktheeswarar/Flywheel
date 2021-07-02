@@ -23,8 +23,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
-import org.junit.Assert
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ColdSideEffectReplayTest {
 
@@ -35,10 +35,10 @@ class ColdSideEffectReplayTest {
         }
     }
 
-    @Test
+    /*@Test
     fun replayLargeTest() = runBlocking {
         singleReplayTestIteration(N = 100_000, subscribers = 10)
-    }
+    }*/
 
     /**
      * Tests consistency of produced flow. E.g. for just increment reducer output must be
@@ -80,7 +80,7 @@ class ColdSideEffectReplayTest {
                         // it's expected to see monotonously increasing sequence with no missing values
                         stateReserve.coldActions.map { stateReserve.awaitState() }
                             .takeWhile { it.count < N }.toList().zipWithNext { a, b ->
-                                Assert.assertEquals(a.count + 1, b.count)
+                                assertEquals(a.count + 1, b.count)
                             }
                     }
                 }
@@ -90,7 +90,7 @@ class ColdSideEffectReplayTest {
 
 
     @Suppress("DeferredResultUnused")
-    @Test(timeout = 10_000)
+    @Test
     fun testProperCancellation() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + Job())
         val reduce: Reduce<TestCounterState> = { action, state ->

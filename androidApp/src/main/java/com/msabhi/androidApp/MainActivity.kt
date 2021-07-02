@@ -21,7 +21,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.msabhi.androidApp.counter.ui.CounterActivity
 import com.msabhi.androidApp.databinding.ActivityMainBinding
-import com.msabhi.flywheel.sample.Greeting
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,15 +30,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        binding.textPlatform.text = greet()
-
         binding.buttonCounterExample.setOnClickListener {
             startActivity(Intent(this, CounterActivity::class.java))
         }
     }
 }
 
-fun greet(): String {
-    return Greeting().greeting()
-}
+

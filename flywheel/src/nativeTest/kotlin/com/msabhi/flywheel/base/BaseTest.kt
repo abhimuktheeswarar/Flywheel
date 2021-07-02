@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.sample
+package com.msabhi.flywheel.base
 
-actual class Platform actual constructor() {
-    actual val platform: String
-        get() = TODO("Not yet implemented")
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
+
+actual abstract class BaseTest {
+
+    actual fun <T> runTest(block: suspend CoroutineScope.() -> T) {
+        runBlocking { block() }
+    }
 }

@@ -16,19 +16,17 @@
 
 package com.msabhi.flywheel
 
+import com.msabhi.flywheel.base.BaseTest
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineScope
-import org.junit.Assert
-import org.junit.Test
-import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-class SetStateWithStateOrderingTest {
+class SetStateWithStateOrderingTest : BaseTest() {
 
     private fun stateReserve(
         scope: CoroutineScope,
@@ -45,7 +43,7 @@ class SetStateWithStateOrderingTest {
     }
 
     @Test
-    fun test1() = runBlocking {
+    fun test1() = runTest {
         val calls = mutableListOf<String>()
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -56,7 +54,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(this, reduce)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         launch {
             stateReserve.awaitState()
@@ -66,7 +64,7 @@ class SetStateWithStateOrderingTest {
     }
 
     @Test
-    fun test2() = runBlocking {
+    fun test2() = runTest {
         val calls = mutableListOf<String>()
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -77,7 +75,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(this, reduce)
         launch {
             stateReserve.awaitState()
             calls += "w1"
@@ -91,7 +89,7 @@ class SetStateWithStateOrderingTest {
     }
 
     @Test
-    fun test3() = runBlocking {
+    fun test3() = runTest {
         val calls = mutableListOf<String>()
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -102,7 +100,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(this, reduce)
         launch {
             stateReserve.awaitState()
             calls += "w1"
@@ -115,46 +113,11 @@ class SetStateWithStateOrderingTest {
         assertMatches(calls, "w1", "s1", "w2")
     }
 
-    @Test
-    fun test4() = runBlocking {
-        val calls = ConcurrentLinkedQueue<String>()
-        val reduce: Reduce<TestCounterState> = { action, state ->
-            when (action) {
-                is TestCounterAction.IncrementAction -> {
-                    calls += "s1"
-                    state.copy(count = state.count + 1)
-                }
-                is TestCounterAction.DecrementAction -> {
-                    calls += "s2"
-                    state.copy(count = state.count - 1)
-                }
-                is TestCounterAction.ForceUpdateAction -> {
-                    calls += "s3"
-                    state.copy(count = action.count)
-                }
-                else -> state
-            }
-        }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
-        launch {
-            stateReserve.awaitState()
-            calls += "w1"
-            launch {
-                calls += "w2"
-            }
-            stateReserve.dispatch(TestCounterAction.IncrementAction)
-            stateReserve.dispatch(TestCounterAction.DecrementAction)
-            val count = stateReserve.awaitState().count
-            stateReserve.dispatch(TestCounterAction.ForceUpdateAction(count))
-        }
-
-        assertMatches(calls, "w1", "s1", "s2", "s3", "w2")
-    }
 
     private suspend fun assertMatches(calls: Collection<String>, vararg expectedCalls: String) {
         while (calls.size != expectedCalls.size) {
             delay(1)
         }
-        Assert.assertEquals(expectedCalls.toList(), calls.toList())
+        assertEquals(expectedCalls.toList(), calls.toList())
     }
 }

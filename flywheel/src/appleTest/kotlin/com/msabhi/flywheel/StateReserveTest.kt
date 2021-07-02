@@ -16,74 +16,69 @@
 
 package com.msabhi.flywheel
 
+import com.msabhi.flywheel.base.BaseTest
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineScope
-import org.junit.Test
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-class MiddlewareTest {
+class StateReserveTest : BaseTest() {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
         when (action) {
             is TestCounterAction.IncrementAction -> state.copy(count = state.count + 1)
             is TestCounterAction.DecrementAction -> state.copy(count = state.count - 1)
             is TestCounterAction.ForceUpdateAction -> state.copy(count = action.count)
-            is TestCounterAction.ResetAction -> state.copy(count = 0)
             else -> state
         }
     }
 
-    private val plainMiddleware: Middleware<TestCounterState> = { dispatch, getState ->
-
-        { next ->
-
-            { action ->
-
-                next(action)
-            }
-        }
-    }
-
-    private val dispatchingMiddleware: Middleware<TestCounterState> = { dispatch, getState ->
-
-        { next ->
-
-            { action ->
-
-                when (action) {
-                    is TestCounterAction.IncrementAction -> {
-                        dispatch(TestCounterAction.ForceUpdateAction(5))
-                    }
-                    is TestCounterAction.DecrementAction -> {
-                        dispatch(TestCounterAction.IncrementAction)
-                    }
-                    else -> next(action)
-                }
-            }
-        }
-    }
-
-    private fun stateReserve(): StateReserve<TestCounterState> {
+    private fun stateReserve(
+        reduce: Reduce<TestCounterState> = this.reduce,
+        scope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
+    ): StateReserve<TestCounterState> {
         val config =
             StateReserveConfig(
-                scope = TestCoroutineScope(),
+                scope = scope,
                 debugMode = false)
         return StateReserve(initialState = TestCounterState(count = 1),
             reduce = reduce,
             config = config,
-            middlewares = listOf(plainMiddleware, dispatchingMiddleware))
+            middlewares = null)
     }
 
     @Test
-    fun testMiddlewareBehaviour() = runBlocking {
-        val stateReserve = stateReserve()
+    fun testGetRunsSynchronouslyForTests() = runTest {
+        println("start")
+        var callCount = 0
+        val reduce: Reduce<TestCounterState> = { _, state ->
+
+            callCount++
+            state
+        }
+        val stateReserve = stateReserve(reduce, this)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
-        stateReserve.dispatch(TestCounterAction.DecrementAction)
-        assertEquals(5, stateReserve.state().count)
-        stateReserve.dispatch(TestCounterAction.ResetAction)
-        assertEquals(0, stateReserve.state().count)
+        stateReserve.awaitState()
+        println("end")
+        assertEquals(1, callCount)
+    }
+
+    @Test
+    fun testSetState() = runTest {
+        var called = false
+        val reduce: Reduce<TestCounterState> = { action, state ->
+            assertEquals(2, (action as TestCounterAction.ForceUpdateAction).count)
+            called = true
+            state
+        }
+        val stateReserve = stateReserve(reduce, this)
+        stateReserve.dispatch(TestCounterAction.ForceUpdateAction(2))
+        stateReserve.awaitState()
+        assertTrue(called)
     }
 }

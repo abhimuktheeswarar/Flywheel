@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.msabhi.flywheel.utilities
+package com.msabhi.flywheel.base
 
-import com.msabhi.flywheel.BuildConfig
-import com.msabhi.flywheel.StateReserveConfig
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
-fun getDefaultScope() =
-    CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    })
+actual abstract class BaseTest {
 
-fun getDefaultStateReserveConfig(scope: CoroutineScope = getDefaultScope()) =
-    StateReserveConfig(scope = scope,
-        debugMode = BuildConfig.DEBUG)
-
+    actual fun <T> runTest(block: suspend CoroutineScope.() -> T) {
+        throw UnsupportedOperationException()
+    }
+}

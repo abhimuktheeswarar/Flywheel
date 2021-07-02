@@ -18,19 +18,18 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.Assert
-import org.junit.Test
+import kotlinx.coroutines.runBlocking
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class SetStateWithStateAfterScopeCancellationTest {
 
     @Test
-    fun setStateAfterScopeCancellation() = runBlockingTest {
-        val scope = TestCoroutineScope(Job())
+    fun setStateAfterScopeCancellation() = runBlocking {
+        val scope = MainScope()
         scope.cancel()
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -50,6 +49,6 @@ class SetStateWithStateAfterScopeCancellationTest {
         stateReserve.dispatch(TestCounterAction.ForceUpdateAction(4))
         // ensure set operation above is ignored
         val count = stateReserve.state().count
-        Assert.assertEquals(1, count)
+        assertEquals(1, count)
     }
 }
