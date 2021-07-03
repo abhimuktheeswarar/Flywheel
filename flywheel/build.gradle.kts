@@ -12,6 +12,7 @@ plugins {
 
 val GROUP: String by project
 val VERSION_NAME: String by project
+
 val POM_NAME: String by project
 val POM_DESCRIPTION: String by project
 val POM_URL: String by project
