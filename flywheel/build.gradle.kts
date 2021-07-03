@@ -31,7 +31,7 @@ val POM_DEVELOPER_EMAIL: String = gradleLocalProperties(
     System.getenv("POM_DEVELOPER_EMAIL"))
 
 val SONATYPE_USERNAME: String = gradleLocalProperties(
-    rootDir).getProperty("SONATYPE_PASSWORD",
+    rootDir).getProperty("SONATYPE_USERNAME",
     System.getenv("SONATYPE_USERNAME"))
 
 val SONATYPE_PASSWORD: String = gradleLocalProperties(
