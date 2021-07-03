@@ -2,7 +2,7 @@ Pod::Spec.new do |spec|
     spec.name                     = 'flywheel'
     spec.version                  = '1.0.0-RC'
     spec.homepage                 = 'https://github.com/abhimuktheeswarar/Flywheel'
-    spec.source                   = { :git => "https://github.com/abhimuktheeswarar/Flywheel.git", :tag => "Cocoapods/#{spec.name}/#{spec.version}" }
+    spec.source                   = { :git => "https://github.com/abhimuktheeswarar/Flywheel.git", :tag => "v#{spec.version}" }
     spec.authors                  = 'Abhi Muktheeswarar'
     spec.license                  = 'The Apache Software License, Version 2.0'
     spec.summary                  = 'Kotlin-Multiplatform state management library'
