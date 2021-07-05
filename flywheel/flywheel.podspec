@@ -2,7 +2,7 @@ Pod::Spec.new do |spec|
     spec.name                     = 'flywheel'
     spec.version                  = '1.0.0-RC'
     spec.homepage                 = 'https://github.com/abhimuktheeswarar/Flywheel'
-    spec.source                   = { :git => "https://github.com/abhimuktheeswarar/Flywheel.git", :tag => "v#{spec.version}" }
+    spec.source                   = { :git => "Not Published", :tag => "Cocoapods/#{spec.name}/#{spec.version}" }
     spec.authors                  = 'Abhi Muktheeswarar'
     spec.license                  = 'The Apache Software License, Version 2.0'
     spec.summary                  = 'Kotlin-Multiplatform state management library'
@@ -34,7 +34,7 @@ Pod::Spec.new do |spec|
             :script => <<-SCRIPT
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/../gradlew" -p "$REPO_ROOT" :flywheel:syncFramework \
+                "$REPO_ROOT/../../../../../private/var/folders/mp/g1wk29253ld97p6n0cgnwt200000gn/T/wraploc/gradlew" -p "$REPO_ROOT" :flywheel:syncFramework \
                     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
