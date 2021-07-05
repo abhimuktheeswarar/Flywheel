@@ -11,17 +11,14 @@
 ![badge-windows](https://img.shields.io/badge/platform-windows-informational.svg?style=flat)
 ![badge-native](https://img.shields.io/badge/platform-native-lightgrey.svg?style=flat)
 
-<br>
 
 A simple and predictable state management library inspired by [Flux](https://facebook.github.io/flux/docs/in-depth-overview) + [Elm](https://guide.elm-lang.org/architecture/) = [Redux](https://github.com/reactjs/redux). Flywheel is built on top of [Corotuines](https://kotlinlang.org/docs/coroutines-overview.html) using the concepts of [structured concurrency](https://kotlinlang.org/docs/coroutines-basics.html#structured-concurrency). At the core, lies the [State Machine](https://en.wikipedia.org/wiki/Finite-state_machine) which is based on [actor model](https://en.wikipedia.org/wiki/Actor_model).
 
-<br>
 
 ## **Why Flywheel?**
 
 The goal was to make the state management concept of Redux simple, understandable & easy to use in Kotlin based projects. To achieve that, we adapted only the core concepts from Redux and slightly modified them. We excluded Android, Apple or any platform-specific dependencies. It is just pure Kotlin. By doing so, you are free to choose your architecture that best suits your codebase, no need to make any big refactor to fit in Flywheel. Don't be fooled by its simplicity, Flywheel got you covered for all practical use-cases. Even if we missed anything, it can be easily extended to support your use cases.
 
-<br>
 
 ## **Getting started**
 
@@ -48,7 +45,6 @@ dependencies {
 }
 ```
 
-<br>
 
 ## **Usage**
 
@@ -104,11 +100,9 @@ This is how a simple counter example looks like.
     stateReserve.dispatch(IncrementAction)
     ```
 
-<br>
 
 ### To learn more about Flywheel, head on over to our [wiki](https://github.com/abhimuktheeswarar/Flywheel/wiki).
 
-<br>
 
 ## **License**
 
