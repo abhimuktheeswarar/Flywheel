@@ -12,7 +12,7 @@
 ![badge-native](https://img.shields.io/badge/platform-native-lightgrey.svg?style=flat)
 
 
-A simple and predictable state management library inspired by [Flux](https://facebook.github.io/flux/docs/in-depth-overview) + [Elm](https://guide.elm-lang.org/architecture/) = [Redux](https://github.com/reactjs/redux). Flywheel is built on top of [Corotuines](https://kotlinlang.org/docs/coroutines-overview.html) using the concepts of [structured concurrency](https://kotlinlang.org/docs/coroutines-basics.html#structured-concurrency). At the core, lies the [State Machine](https://en.wikipedia.org/wiki/Finite-state_machine) which is based on [actor model](https://en.wikipedia.org/wiki/Actor_model).
+A simple and predictable state management library inspired by [Flux](https://facebook.github.io/flux/docs/in-depth-overview) + [Elm](https://guide.elm-lang.org/architecture/) + [Redux](https://github.com/reactjs/redux). Flywheel is built on top of [Corotuines](https://kotlinlang.org/docs/coroutines-overview.html) using the concepts of [structured concurrency](https://kotlinlang.org/docs/coroutines-basics.html#structured-concurrency). At the core, lies the [State Machine](https://en.wikipedia.org/wiki/Finite-state_machine) which is based on [actor model](https://en.wikipedia.org/wiki/Actor_model).
 
 
 ## **Why Flywheel?**
