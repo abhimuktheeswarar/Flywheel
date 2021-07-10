@@ -114,6 +114,7 @@ class StateReserveConfig(
  */
 private fun <S : State> CoroutineScope.stateMachine(
     initialState: S,
+    restoreState: ReceiveChannel<S>,
     inputActions: ReceiveChannel<Action>,
     requestStates: ReceiveChannel<Unit>,
     sendStates: SendChannel<S>,
@@ -128,6 +129,10 @@ private fun <S : State> CoroutineScope.stateMachine(
     while (isActive) {
 
         select<Unit> {
+
+            restoreState.onReceive {
+                state = it
+            }
 
             inputActions.onReceive { action ->
                 val newState = reduce(action, state)
@@ -167,6 +172,8 @@ class StateReserve<S : State>(
         Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
     private val sendStatesChannel: Channel<S> =
         Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
+
+    private val restoreStateChannel: Channel<S> = Channel()
 
     private val mutableHotActions: MutableSharedFlow<Action> = MutableSharedFlow(
         extraBufferCapacity = Int.MAX_VALUE,
@@ -217,6 +224,7 @@ class StateReserve<S : State>(
 
         config.scope.stateMachine(
             initialState = initialState,
+            restoreState = restoreStateChannel,
             inputActions = inputActionsChannel,
             requestStates = requestStatesChannel,
             sendStates = sendStatesChannel,
@@ -240,6 +248,13 @@ class StateReserve<S : State>(
     fun dispatch(action: Action) {
         mutableHotActions.tryEmit(action)
         middlewares?.invoke(action) ?: dispatcher(action)
+    }
+
+    /**
+     * Allows to restore [State] usually after recovering from a Process death.
+     */
+    fun restoreState(state: S) {
+        config.scope.launch { restoreStateChannel.send(state) }
     }
 
     /**
