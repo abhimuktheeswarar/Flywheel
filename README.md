@@ -50,7 +50,7 @@ use_frameworks!
 
 target 'MyApp' do
 
-    pod 'Flywheel', '~> v1.0.1-RC'
+    pod 'Flywheel', '~> 1.0.1-RC'
 
 end
 ```
