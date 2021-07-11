@@ -1,0 +1,6 @@
+framework module flywheel {
+    umbrella header "flywheel.h"
+
+    export *
+    module * { export * }
+}
