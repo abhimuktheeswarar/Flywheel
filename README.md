@@ -29,7 +29,7 @@ kotlin {
   sourceSets {
       val commonMain by getting {
           dependencies {
-              implementation("com.msabhi:flywheel:1.0.0-RC")
+              implementation("com.msabhi:flywheel:1.0.1-RC")
           }
       }
   }
@@ -41,10 +41,20 @@ In Android / Gradle project:
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel:1.0.0-RC")
+    implementation("com.msabhi:flywheel:1.0.1-RC")
 }
 ```
+In Apple platforms, you can use CocoaPods to install Flywheel by adding it to your `Podfile`:
+```
+platform :ios, '11.0'
+use_frameworks!
 
+target 'MyApp' do
+
+    pod 'Flywheel', '~> v1.0.1-RC'
+
+end
+```
 
 ## **Usage**
 
