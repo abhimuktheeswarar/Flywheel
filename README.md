@@ -46,7 +46,6 @@ dependencies {
 ```
 In Apple platforms, you can use CocoaPods to install Flywheel by adding it to your `Podfile`:
 ```
-platform :ios, '11.0'
 use_frameworks!
 
 target 'MyApp' do
