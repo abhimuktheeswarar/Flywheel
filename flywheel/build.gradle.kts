@@ -147,12 +147,6 @@ kotlin {
         val mingwX64Test by getting {
             dependsOn(nativeTest)
         }
-        cocoapods {
-            summary = POM_DESCRIPTION
-            homepage = POM_URL
-            license = POM_LICENCE_NAME
-            authors = POM_DEVELOPER_NAME
-        }
     }
 }
 
@@ -264,4 +258,45 @@ signing {
     )
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign(publishing.publications)
+}
+
+//----------------------------------------------------------------------------------
+
+val xcFrameworkPath = "xcframework/Flywheel.xcframework"
+
+tasks.create<Delete>("deleteXcFramework") { delete = setOf(xcFrameworkPath) }
+
+val buildXcFramework by tasks.registering {
+    dependsOn("deleteXcFramework")
+    group = "build"
+    val mode = "Release"
+    val frameworks = arrayOf(
+        "iosArm64",
+        "iosX64",
+        "watchosArm64",
+        "watchosX64",
+        "tvosArm64",
+        "tvosX64",
+        "macosX64")
+        .map { kotlin.targets.getByName<KotlinNativeTarget>(it).binaries.getFramework(mode) }
+    inputs.property("mode", mode)
+    dependsOn(frameworks.map { it.linkTask })
+    doLast { buildXcFramework(frameworks) }
+}
+
+fun Task.buildXcFramework(frameworks: List<org.jetbrains.kotlin.gradle.plugin.mpp.Framework>) {
+    val buildArgs: () -> List<String> = {
+        val arguments = mutableListOf("-create-xcframework")
+        frameworks.forEach {
+            arguments += "-framework"
+            arguments += "${it.outputDirectory}/${project.name}.framework"
+        }
+        arguments += "-output"
+        arguments += xcFrameworkPath
+        arguments
+    }
+    exec {
+        executable = "xcodebuild"
+        args = buildArgs()
+    }
 }
