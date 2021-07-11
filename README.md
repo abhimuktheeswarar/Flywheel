@@ -22,7 +22,7 @@ The goal was to make the state management concept of Redux simple, understandabl
 
 ## **Getting started**
 
-In Kotlin Multiplatfrom project:
+#### In Kotlin Multiplatfrom project:
 
 ```Kotlin
 kotlin {
@@ -36,7 +36,7 @@ kotlin {
 }
 ```
 
-In Android / Gradle project:
+#### In Android / Gradle project:
 
 ```Kotlin
 dependencies {
@@ -44,7 +44,10 @@ dependencies {
     implementation("com.msabhi:flywheel:1.0.2-RC")
 }
 ```
-In Apple platforms, you can use CocoaPods to install Flywheel by adding it to your `Podfile`:
+
+
+#### In Apple platforms
+You can use CocoaPods to install Flywheel by adding it to your `Podfile`:
 ```
 use_frameworks!
 
@@ -54,6 +57,21 @@ target 'MyApp' do
 
 end
 ```
+
+You can use the [Swift Package Manager](https://swift.org/package-manager) to install `Flywheel` by adding the proper description to your `Package.swift` file:
+
+```swift
+// swift-tools-version:5.3
+import PackageDescription
+
+let package = Package(
+    name: "YOUR_PROJECT_NAME",
+    dependencies: [
+        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.0.2-RC"),
+    ]
+)
+```
+Then run `swift build` whenever you get prepared.
 
 ## **Usage**
 
