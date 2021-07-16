@@ -24,6 +24,10 @@ import kotlinx.coroutines.SupervisorJob
 
 fun Action.name(): String = this::class.simpleName ?: "Action"
 
+/**
+ * Middleware to prevent actions from reaching reducer which implement [SkipReducer].
+ * This should be last middleware.
+ */
 val skipMiddleware: Middleware<State> = { _, _ ->
     { next ->
 
