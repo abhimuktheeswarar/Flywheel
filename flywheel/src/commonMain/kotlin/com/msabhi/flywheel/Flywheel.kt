@@ -25,6 +25,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.selects.select
 
 /**
@@ -58,6 +60,11 @@ interface ErrorAction : Action {
  * Example: A `ShowToastAction` doesn't have to pass through a reducer, so it can implement [SkipReducer].
  */
 interface SkipReducer : Action
+
+/**
+ * Internal Action to force distinct actions even when same actions are received in dispatch.
+ */
+private object ForceDistinctAction : Action
 
 /**
  * Objects holding the state of a application/feature must implement [State].
@@ -196,9 +203,11 @@ class StateReserve<S : State>(
 
     /**
      * Returns a [Flow] of actions that are passed through middleware and before reaching reducer.
+     * This also captures actions modified by middlewares.
      * It is useful to react immediately to an received action.
      */
-    val hotActions: Flow<Action> = mutableHotActions
+    val hotActions: Flow<Action> =
+        mutableHotActions.distinctUntilChanged().filterNot { it is ForceDistinctAction }
 
     /**
      * Returns a [Flow] of actions that are passed through reducer.
@@ -231,6 +240,8 @@ class StateReserve<S : State>(
         if (config.debugMode && config.assertStateValues) {
             assertStateValues(action, state(), reduce, mutableStateChecker)
         }
+        mutableHotActions.tryEmit(action)
+        mutableHotActions.tryEmit(ForceDistinctAction)
         inputActionsChannel.trySend(action)
     }
 
