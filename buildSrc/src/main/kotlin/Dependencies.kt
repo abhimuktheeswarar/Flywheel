@@ -16,8 +16,8 @@
 
 object Versions {
 
-    const val kotlin = "1.5.20"
-    const val coroutines = "1.5.0-native-mt"
+    const val kotlin = "1.5.21"
+    const val coroutines = "1.5.1-native-mt"
     const val dokka = "1.4.32"
 
     object Android {
@@ -29,18 +29,18 @@ object Versions {
         const val androidGradlePlugin = "4.2.2"
 
         const val appCompat = "1.3.0"
-        const val core = "1.5.0"
+        const val core = "1.6.0"
         const val activityKtx = "1.2.3"
         const val fragmentKtx = "1.3.5"
         const val constraintLayout = "2.0.4"
         const val lifecycle = "2.3.1"
         const val recyclerView = "1.2.0"
-        const val materialComponents = "1.3.0"
+        const val materialComponents = "1.4.0"
 
         const val navigation = "2.3.5"
 
         const val test = "1.3.0"
-        const val testExt = "1.1.2"
+        const val testExt = "1.1.3"
     }
 
     object Testing {
