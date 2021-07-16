@@ -5,7 +5,7 @@
 [![Kotlin](https://img.shields.io/badge/kotlin-1.5.21-blue.svg?logo=kotlin)](http://kotlinlang.org)
 ![badge-android](https://img.shields.io/badge/platform-android-3DDC84.svg?style=flat)
 ![badge-jvm](https://img.shields.io/badge/platform-jvm-red.svg?style=flat)
-![badge-apple](https://img.shields.io/badge/platform-ios%20%7C%20macos%20%7C%20watchos%20%7C%20tvos-lightgrey?style=flat)
+![badge-apple](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-lightgrey?style=flat)
 ![badge-js](https://img.shields.io/badge/platform-js-yellow.svg?style=flat)
 ![badge-linux](https://img.shields.io/badge/platform-linux-important.svg?style=flat)
 ![badge-windows](https://img.shields.io/badge/platform-windows-informational.svg?style=flat)
