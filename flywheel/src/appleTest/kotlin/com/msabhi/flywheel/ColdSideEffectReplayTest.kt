@@ -28,7 +28,7 @@ import kotlin.test.assertEquals
 
 class ColdSideEffectReplayTest {
 
-    @Test
+    //@Test
     fun replayTest() = runBlocking {
         repeat(1) {
             singleReplayTestIteration(N = 200, subscribers = 1)
@@ -61,7 +61,7 @@ class ColdSideEffectReplayTest {
                     scope = scope,
                     debugMode = false)
             val stateReserve =
-                StateReserve(initialState = TestCounterState(),
+                StateReserve(initialState = InitialState.set(TestCounterState()),
                     reduce = reduce,
                     config = config,
                     middlewares = null)
@@ -104,7 +104,7 @@ class ColdSideEffectReplayTest {
                 scope = scope,
                 debugMode = false)
         val stateReserve =
-            StateReserve(initialState = TestCounterState(),
+            StateReserve(initialState = InitialState.set(TestCounterState()),
                 reduce = reduce,
                 config = config,
                 middlewares = null)

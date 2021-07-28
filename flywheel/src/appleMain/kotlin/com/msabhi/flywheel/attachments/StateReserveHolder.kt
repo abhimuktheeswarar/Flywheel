@@ -31,7 +31,7 @@ open class StateReserveHolder<S : State>(
 ) {
 
     val stateReserve = StateReserve(
-        initialState = initialState,
+        initialState = InitialState.Companion.set(initialState),
         reduce = reduce,
         middlewares = null,
         config = config ?: StateReserveConfig(scope = getDefaultScope(),

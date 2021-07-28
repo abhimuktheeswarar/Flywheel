@@ -18,15 +18,13 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.utilities.MutableStateChecker
 import com.msabhi.flywheel.utilities.assertStateValues
+import com.msabhi.flywheel.utilities.name
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 
 /**
@@ -79,7 +77,7 @@ typealias Reduce<S> = (action: Action, state: S) -> S
 /**
  * A [Reducer] is provided to allow combining multiple reducers.
  */
-typealias Reducer<A, S> = (A, S) -> S
+internal typealias Reducer<A, S> = (A, S) -> S
 
 /**
  * [Dispatch] is the entry point for all actions.
@@ -104,6 +102,49 @@ typealias GetState<S> = () -> S
  */
 typealias Middleware<S> = (Dispatch, GetState<S>) -> (Dispatch) -> Dispatch
 
+class UnsupportedStateTransition(val msg: String) : Exception(msg)
+
+sealed interface Transition<out A : Action, out S : State> {
+    val action: A
+    val fromState: S
+
+    data class Valid<out A : Action, out FS : State, out TS : State>(
+        override val action: A,
+        override val fromState: FS,
+        val toState: TS,
+    ) : Transition<A, FS>
+
+    data class Nothing<out A : Action, out S : State>(
+        override val action: A,
+        override val fromState: S,
+    ) : Transition<A, S>
+
+    data class InValid<out A : Action, out S : State>(
+        override val action: A,
+        override val fromState: S,
+        val exception: Exception = UnsupportedStateTransition("Unsupported state transition attempted with ${fromState::class.simpleName} for action ${action.name()}"),
+    ) : Transition<A, S>
+}
+
+data class ActionState<out A : Action, out S : State>(
+    val action: A,
+    val state: S,
+)
+
+class InitialState<out A, out B> private constructor(
+    val state: A? = null,
+    val deferredState: B? = null,
+) {
+
+    companion object {
+
+        fun <S : State> set(state: S): InitialState<S, CompletableDeferred<S>> = InitialState(state)
+
+        fun <S : State> set(deferredState: CompletableDeferred<S>): InitialState<S, CompletableDeferred<S>> =
+            InitialState(null, deferredState)
+    }
+}
+
 /**
  * Provides basic configuration for the [StateReserve].
  */
@@ -111,6 +152,7 @@ class StateReserveConfig(
     val scope: CoroutineScope,
     val debugMode: Boolean,
     val ignoreDuplicateState: Boolean = true,
+    val enhancedStateMachine: Boolean = false,
     val assertStateValues: Boolean = debugMode,
     val checkMutableState: Boolean = debugMode,
 )
@@ -120,18 +162,42 @@ class StateReserveConfig(
  * This is based on the concepts of actors. By confining the state, it satisfies the concurrency rules of Kotlin-Native.
  */
 private fun <S : State> CoroutineScope.stateMachine(
-    initialState: S,
+    initialState: InitialState<S, CompletableDeferred<S>>,
     restoreState: ReceiveChannel<S>,
     inputActions: ReceiveChannel<Action>,
     requestStates: ReceiveChannel<Unit>,
     sendStates: SendChannel<S>,
     setStates: MutableSharedFlow<S>,
-    coldActions: MutableSharedFlow<Action>,
+    transitions: MutableSharedFlow<Any>,
     reduce: Reduce<S>,
     ignoreDuplicateState: Boolean,
+    enhancedStateMachine: Boolean,
 ) = launch {
 
-    var state = initialState
+    var state =
+        initialState.deferredState?.await()?.also { setStates.emit(it) } ?: initialState.state!!
+
+    suspend fun transition(action: Action, fromState: S, toState: S, throwable: Throwable? = null) {
+        when {
+            !enhancedStateMachine -> {
+                return
+            }
+            throwable != null -> {
+                val transition = Transition.InValid(action, fromState)
+                transitions.emit(transition)
+            }
+            fromState::class.isInstance(toState) -> {
+                val transition = Transition.Nothing(action, state)
+                transitions.emit(transition)
+            }
+            else -> {
+                val transition = Transition.Valid(action, fromState, toState)
+                transitions.emit(transition)
+                transitions.emit(ActionState(action, fromState))
+                transitions.emit(ActionState(action, toState))
+            }
+        }
+    }
 
     while (isActive) {
 
@@ -142,17 +208,24 @@ private fun <S : State> CoroutineScope.stateMachine(
             }
 
             inputActions.onReceive { action ->
-                val newState = reduce(action, state)
-                if (ignoreDuplicateState) {
-                    if (newState != state) {
+                runCatching { reduce(action, state) }.fold({ newState ->
+
+                    transition(action, state, newState)
+
+                    if (ignoreDuplicateState) {
+                        if (newState != state) {
+                            state = newState
+                            setStates.emit(state)
+                        }
+                    } else {
                         state = newState
                         setStates.emit(state)
                     }
-                } else {
-                    state = newState
-                    setStates.emit(state)
-                }
-                coldActions.emit(action)
+
+                }, { error ->
+                    transition(action, state, state, error)
+                })
+                transitions.emit(action)
             }
 
             requestStates.onReceive {
@@ -167,7 +240,7 @@ private fun <S : State> CoroutineScope.stateMachine(
  */
 class StateReserve<S : State>(
     val config: StateReserveConfig,
-    private val initialState: S,
+    initialState: InitialState<S, CompletableDeferred<S>>,
     private val reduce: Reduce<S>,
     middlewares: List<Middleware<S>>?,
 ) {
@@ -187,11 +260,6 @@ class StateReserve<S : State>(
         onBufferOverflow = BufferOverflow.SUSPEND
     )
 
-    private val mutableColdActions: MutableSharedFlow<Action> = MutableSharedFlow(
-        extraBufferCapacity = Int.MAX_VALUE,
-        onBufferOverflow = BufferOverflow.SUSPEND
-    )
-
     /**
      *  [MutableSharedFlow] is used instead of MutableStateFlow, since StateFlow drops the oldest values by default, leading to inconsistency in state output under load.
      */
@@ -199,7 +267,12 @@ class StateReserve<S : State>(
         replay = 1,
         extraBufferCapacity = Int.MAX_VALUE,
         onBufferOverflow = BufferOverflow.SUSPEND,
-    ).apply { tryEmit(initialState) }
+    ).apply { initialState.state?.let { tryEmit(it) } }
+
+    private val transitionsMutable: MutableSharedFlow<Any> = MutableSharedFlow(
+        extraBufferCapacity = Int.MAX_VALUE,
+        onBufferOverflow = BufferOverflow.SUSPEND
+    )
 
     /**
      * Returns a [Flow] for this StateReserve's state. It will begin by immediately emitting
@@ -219,7 +292,9 @@ class StateReserve<S : State>(
     /**
      * Returns a [Flow] of actions that are passed through reducer.
      */
-    val coldActions: Flow<Action> = mutableColdActions
+    val coldActions: Flow<Action> = transitionsMutable.filterIsInstance()
+
+    val transitions: Flow<Any> = transitionsMutable
 
     private val middlewares =
         middlewares?.foldRight({ action: Action -> this.dispatcher(action) }) { middleware, dispatcher ->
@@ -227,10 +302,10 @@ class StateReserve<S : State>(
         }
 
     private val mutableStateChecker =
-        if (config.debugMode && config.checkMutableState) MutableStateChecker(initialState) else null
+        if (config.debugMode && config.checkMutableState) MutableStateChecker(state()) else null
+
 
     init {
-
         config.scope.stateMachine(
             initialState = initialState,
             restoreState = restoreStateChannel,
@@ -238,9 +313,10 @@ class StateReserve<S : State>(
             requestStates = requestStatesChannel,
             sendStates = sendStatesChannel,
             setStates = setStates,
-            coldActions = mutableColdActions,
+            transitions = transitionsMutable,
             reduce = reduce,
-            ignoreDuplicateState = config.ignoreDuplicateState
+            ignoreDuplicateState = config.ignoreDuplicateState,
+            enhancedStateMachine = config.enhancedStateMachine
         )
     }
 
@@ -312,10 +388,41 @@ operator fun <S> Reduce<S>.plus(other: Reduce<S>): Reduce<S> = { action, state -
 /**
  * To be used, when using [combineReducers], to help combine reducers.
  */
-inline fun <reified A : Action, S> reducerForAction(crossinline reducer: Reducer<A, S>): Reduce<S> =
+inline fun <reified A : Action, S : State> reducerForAction(crossinline reducer: Reducer<A, S>): Reduce<S> =
     { action, state ->
         when (action) {
             is A -> reducer(action, state)
             else -> state
         }
     }
+
+fun reduceError(): Nothing = throw IllegalStateException()
+
+inline fun <reified S : State, reified T> Flow<S>.specificStates(crossinline transform: suspend (S) -> T): Flow<T> =
+    map(transform).distinctUntilChanged()
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified FS : State, reified TS : State> Flow<Any>.validTransitions(): Flow<Transition.Valid<Action, FS, TS>> =
+    filterIsInstance<Transition<*, *>>()
+        .filter { it.fromState is FS && (it is Transition.Valid<*, *, *> && it.toState is TS) } as Flow<Transition.Valid<Action, FS, TS>>
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified A : Action, reified FS : State, reified TS : State> Flow<Any>.validTransitionWithAction(): Flow<Transition.Valid<A, FS, TS>> =
+    filterIsInstance<Transition<*, *>>()
+        .filter { it.action is A && it.fromState is FS && (it is Transition.Valid<*, *, *> && it.toState is TS) } as Flow<Transition.Valid<A, FS, TS>>
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified A : Action, reified S : State> Flow<Any>.inValidTransition(): Flow<Transition.InValid<A, S>> =
+    filterIsInstance<Transition<*, *>>()
+        .filter { it.action is A && (it is Transition.InValid<*, *>) && it.fromState is S } as Flow<Transition.InValid<A, S>>
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified A : Action, reified S : State> Flow<Any>.onEnter(): Flow<ActionState<A, S>> =
+    filterIsInstance<ActionState<*, *>>()
+        .filter { it.action is A && it.state is S } as Flow<ActionState<A, S>>
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified A : Action, reified S : State> Flow<Any>.onExit(): Flow<ActionState<A, S>> =
+    filterIsInstance<ActionState<*, *>>()
+        .filter { it.action is A && it.state is S } as Flow<ActionState<A, S>>
+

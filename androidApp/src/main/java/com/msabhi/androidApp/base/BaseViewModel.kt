@@ -57,7 +57,7 @@ open class BaseViewModel<S : State>(
     }
 
     private fun createStateReserve() = StateReserve(
-        initialState = initialState,
+        initialState = InitialState.set(initialState),
         reduce = reduce ?: ::reduce,
         middlewares = middlewares,
         config = config

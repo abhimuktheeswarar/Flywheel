@@ -60,7 +60,7 @@ class StateReserveReplayTest {
                     scope = scope,
                     debugMode = false)
             val stateReserve =
-                StateReserve(initialState = TestCounterState(),
+                StateReserve(initialState = InitialState.set(TestCounterState()),
                     reduce = reduce,
                     config = config,
                     middlewares = null)
@@ -106,7 +106,7 @@ class StateReserveReplayTest {
                 scope = scope,
                 debugMode = false)
         val stateReserve =
-            StateReserve(initialState = TestCounterState(),
+            StateReserve(initialState = InitialState.set(TestCounterState()),
                 reduce = reduce,
                 config = config,
                 middlewares = null)

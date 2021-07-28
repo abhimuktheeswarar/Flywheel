@@ -60,8 +60,9 @@ class ColdSideEffectReplayTest {
                 StateReserveConfig(
                     scope = scope,
                     debugMode = false)
+
             val stateReserve =
-                StateReserve(initialState = TestCounterState(),
+                StateReserve(initialState = InitialState.set(TestCounterState()),
                     reduce = reduce,
                     config = config,
                     middlewares = null)
@@ -104,7 +105,7 @@ class ColdSideEffectReplayTest {
                 scope = scope,
                 debugMode = false)
         val stateReserve =
-            StateReserve(initialState = TestCounterState(),
+            StateReserve(initialState = InitialState.set(TestCounterState()),
                 reduce = reduce,
                 config = config,
                 middlewares = null)

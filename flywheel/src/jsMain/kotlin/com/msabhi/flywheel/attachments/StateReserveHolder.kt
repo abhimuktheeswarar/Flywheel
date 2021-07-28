@@ -32,7 +32,7 @@ open class StateReserveHolder<S : State>(
 ) {
 
     private val stateReserve = StateReserve(
-        initialState = initialState,
+        initialState = InitialState.set(initialState),
         reduce = reduce,
         middlewares = null,
         config = config ?: StateReserveConfig(scope = getDefaultScope(),

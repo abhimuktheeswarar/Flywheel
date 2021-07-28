@@ -98,7 +98,7 @@ class HotActionsTest {
             StateReserveConfig(
                 scope = TestCoroutineScope(),
                 debugMode = false)
-        return StateReserve(initialState = TestCounterState(count = 0),
+        return StateReserve(initialState = InitialState.set(TestCounterState()),
             reduce = reduce,
             config = config,
             middlewares = listOf(plainMiddleware,

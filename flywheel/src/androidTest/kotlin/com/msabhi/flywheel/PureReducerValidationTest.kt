@@ -18,6 +18,7 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import org.junit.Rule
@@ -31,7 +32,10 @@ class PureReducerValidationTest {
     @Suppress("DEPRECATION")
     var thrown = ExpectedException.none()!!
 
-    private fun <S : State> stateReserve(initialState: S, reduce: Reduce<S>): StateReserve<S> {
+    private fun <S : State> stateReserve(
+        initialState: InitialState<S, CompletableDeferred<S>>,
+        reduce: Reduce<S>,
+    ): StateReserve<S> {
         val config =
             StateReserveConfig(
                 scope = TestCoroutineScope(TestCoroutineDispatcher()),
@@ -52,7 +56,7 @@ class PureReducerValidationTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCounterState(), reduce)
+        val stateReserve = stateReserve(InitialState.set(TestCounterState()), reduce)
         thrown.expect(IllegalArgumentException::class.java)
         thrown.expectMessage("Impure reducer used!")
         stateReserve.dispatch(TestCounterAction.IncrementAction)
@@ -66,7 +70,7 @@ class PureReducerValidationTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCounterState(), reduce)
+        val stateReserve = stateReserve(InitialState.set(TestCounterState()), reduce)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
     }
 }

@@ -71,7 +71,7 @@ class MiddlewareTest {
             StateReserveConfig(
                 scope = TestCoroutineScope(),
                 debugMode = false)
-        return StateReserve(initialState = TestCounterState(count = 1),
+        return StateReserve(initialState = InitialState.set(TestCounterState(1)),
             reduce = reduce,
             config = config,
             middlewares = listOf(plainMiddleware, dispatchingMiddleware))

@@ -43,7 +43,7 @@ class SetStateWithStateAfterScopeCancellationTest {
                 scope = scope,
                 debugMode = false)
         val stateReserve =
-            StateReserve(initialState = TestCounterState(count = 1),
+            StateReserve(initialState = InitialState.set(TestCounterState(1)),
                 reduce = reduce,
                 config = config,
                 middlewares = null)
