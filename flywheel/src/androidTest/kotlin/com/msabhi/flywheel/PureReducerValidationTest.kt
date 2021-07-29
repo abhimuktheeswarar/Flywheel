@@ -18,7 +18,6 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import org.junit.Rule
@@ -33,7 +32,7 @@ class PureReducerValidationTest {
     var thrown = ExpectedException.none()!!
 
     private fun <S : State> stateReserve(
-        initialState: InitialState<S, CompletableDeferred<S>>,
+        initialState: InitialState<S>,
         reduce: Reduce<S>,
     ): StateReserve<S> {
         val config =

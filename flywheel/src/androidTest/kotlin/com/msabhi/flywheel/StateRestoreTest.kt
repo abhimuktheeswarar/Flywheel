@@ -19,10 +19,14 @@ package com.msabhi.flywheel
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class StateRestoreTest {
@@ -36,27 +40,85 @@ class StateRestoreTest {
         }
     }
 
-    private fun stateReserve(scope: CoroutineScope): StateReserve<TestCounterState> {
+    private fun stateReserve(
+        scope: CoroutineScope,
+        initialState: InitialState<TestCounterState>,
+    ): StateReserve<TestCounterState> {
         val config =
             StateReserveConfig(
                 scope = scope,
-                debugMode = true)
-        return StateReserve(initialState = InitialState.set(TestCounterState(1)),
+                debugMode = false)
+        return StateReserve(initialState = initialState,
             reduce = reduce,
             config = config,
             middlewares = null)
     }
 
     @Test
-    fun testStateReserveRestoreFeature() = runBlockingTest {
-        val stateReserve = stateReserve(TestCoroutineScope())
+    fun testStateReserveWithInitialStateSet() = runBlockingTest {
+
+        val stateReserve =
+            stateReserve(TestCoroutineScope(), InitialState.set(TestCounterState(1)))
+
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         assertEquals(2, stateReserve.awaitState().count)
-        stateReserve.restoreState(TestCounterState(10))
-        assertEquals(10, stateReserve.awaitState().count)
+
+        assertNotNull(runCatching {
+            stateReserve.restoreState(
+                TestCounterState())
+        }.exceptionOrNull())
+
+
+        /* val stateReserveWithDeferredState =
+             stateReserve(TestCoroutineScope(), InitialState.deferredSet())
+
+         stateReserveWithInitialState.restoreState(TestCounterState(10))
+         assertEquals(10, stateReserveWithInitialState.awaitState().count)
+         stateReserveWithInitialState.dispatch(TestCounterAction.IncrementAction)
+         assertEquals(11, stateReserveWithInitialState.awaitState().count)
+         // stateReserve.restoreState(TestCounterState(20))
+         assertEquals(20, stateReserveWithInitialState.awaitState().count)*/
+    }
+
+    @Test
+    fun testStateReserveWithDeferredState() = runBlockingTest {
+
+        val scope = TestCoroutineScope()
+        val stateReserve = stateReserve(scope, InitialState.deferredSet())
+
+        var hotActionsCount = 0
+        val hotJob = launch { stateReserve.hotActions.collect { hotActionsCount++ } }
+
+        var coldActionsCount = 0
+        val coldJob = launch { stateReserve.coldActions.collect { coldActionsCount++ } }
+
+        var state: TestCounterState? = null
+        val stateJob = launch { state = stateReserve.awaitState() }
+
         stateReserve.dispatch(TestCounterAction.IncrementAction)
-        assertEquals(11, stateReserve.awaitState().count)
-        stateReserve.restoreState(TestCounterState(20))
-        assertEquals(20, stateReserve.awaitState().count)
+        stateReserve.dispatch(TestCounterAction.IncrementAction)
+
+        assertEquals(2, hotActionsCount)
+        assertEquals(0, coldActionsCount)
+
+        assertNull(state)
+
+        stateReserve.restoreState(TestCounterState(1))
+        stateReserve.dispatch(TestCounterAction.IncrementAction)
+        assertEquals(4, stateReserve.awaitState().count)
+
+        assertEquals(3, hotActionsCount)
+        assertEquals(3, coldActionsCount)
+
+        assertNotNull(state)
+
+        assertNotNull(runCatching {
+            stateReserve.restoreState(
+                TestCounterState())
+        }.exceptionOrNull())
+
+        hotJob.cancel()
+        coldJob.cancel()
+        stateJob.cancel()
     }
 }

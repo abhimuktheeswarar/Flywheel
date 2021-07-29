@@ -131,17 +131,17 @@ data class ActionState<out A : Action, out S : State>(
     val state: S,
 )
 
-class InitialState<out A, out B> private constructor(
-    val state: A? = null,
-    val deferredState: B? = null,
+class InitialState<S : State> private constructor(
+    val state: S? = null,
+    val deferredState: CompletableDeferred<S>? = null,
 ) {
 
     companion object {
 
-        fun <S : State> set(state: S): InitialState<S, CompletableDeferred<S>> = InitialState(state)
+        fun <S : State> set(state: S): InitialState<S> = InitialState(state)
 
-        fun <S : State> set(deferredState: CompletableDeferred<S>): InitialState<S, CompletableDeferred<S>> =
-            InitialState(null, deferredState)
+        fun <S : State> deferredSet(): InitialState<S> =
+            InitialState(null, CompletableDeferred())
     }
 }
 
@@ -162,8 +162,7 @@ class StateReserveConfig(
  * This is based on the concepts of actors. By confining the state, it satisfies the concurrency rules of Kotlin-Native.
  */
 private fun <S : State> CoroutineScope.stateMachine(
-    initialState: InitialState<S, CompletableDeferred<S>>,
-    restoreState: ReceiveChannel<S>,
+    initialState: InitialState<S>,
     inputActions: ReceiveChannel<Action>,
     requestStates: ReceiveChannel<Unit>,
     sendStates: SendChannel<S>,
@@ -203,10 +202,6 @@ private fun <S : State> CoroutineScope.stateMachine(
 
         select<Unit> {
 
-            restoreState.onReceive {
-                state = it
-            }
-
             inputActions.onReceive { action ->
                 runCatching { reduce(action, state) }.fold({ newState ->
 
@@ -240,7 +235,7 @@ private fun <S : State> CoroutineScope.stateMachine(
  */
 class StateReserve<S : State>(
     val config: StateReserveConfig,
-    initialState: InitialState<S, CompletableDeferred<S>>,
+    private val initialState: InitialState<S>,
     private val reduce: Reduce<S>,
     middlewares: List<Middleware<S>>?,
 ) {
@@ -252,8 +247,6 @@ class StateReserve<S : State>(
         Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
     private val sendStatesChannel: Channel<S> =
         Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
-
-    private val restoreStateChannel: Channel<S> = Channel()
 
     private val mutableHotActions: MutableSharedFlow<Action> = MutableSharedFlow(
         extraBufferCapacity = Int.MAX_VALUE,
@@ -301,14 +294,13 @@ class StateReserve<S : State>(
             middleware(::dispatch, ::state)(dispatcher)
         }
 
-    private val mutableStateChecker =
+    private val mutableStateChecker by lazy {
         if (config.debugMode && config.checkMutableState) MutableStateChecker(state()) else null
-
+    }
 
     init {
         config.scope.stateMachine(
             initialState = initialState,
-            restoreState = restoreStateChannel,
             inputActions = inputActionsChannel,
             requestStates = requestStatesChannel,
             sendStates = sendStatesChannel,
@@ -318,6 +310,8 @@ class StateReserve<S : State>(
             ignoreDuplicateState = config.ignoreDuplicateState,
             enhancedStateMachine = config.enhancedStateMachine
         )
+
+        initialState.deferredState?.invokeOnCompletion { }
     }
 
     private fun dispatcher(action: Action) {
@@ -338,17 +332,11 @@ class StateReserve<S : State>(
     }
 
     /**
-     * Allows to restore [State] usually after recovering from a Process death.
-     */
-    fun restoreState(state: S) {
-        config.scope.launch { restoreStateChannel.send(state) }
-    }
-
-    /**
      * Synchronous access to state. Please note, there is no guarantee that the state will be the final expected state.
      * i.e there could be some actions in the queue to update the state. Calling this function will provide the state at that moment, not after all actions have passed through a reducer.
      */
-    fun state(): S = setStates.replayCache.last()
+    fun state(): S = setStates.replayCache.lastOrNull()
+        ?: throw IllegalStateException("Initial state is not yet set")
 
     /**
      * This function is guaranteed to provide the final state after all actions are processed by the [stateMachine] reducer.
@@ -357,6 +345,16 @@ class StateReserve<S : State>(
     suspend fun awaitState(): S {
         requestStatesChannel.send(Unit)
         return sendStatesChannel.receive()
+    }
+
+    fun restoreState(state: S): Boolean {
+        return when {
+            initialState.state != null -> throw IllegalArgumentException("State already set")
+            initialState.deferredState == null -> throw IllegalArgumentException("Restoring state is not supported")
+            initialState.deferredState.isCompleted -> throw IllegalArgumentException("State already restored")
+            initialState.deferredState.isActive -> initialState.deferredState.complete(state)
+            else -> false
+        }
     }
 
     /**
@@ -400,6 +398,9 @@ fun reduceError(): Nothing = throw IllegalStateException()
 
 inline fun <reified S : State, reified T> Flow<S>.specificStates(crossinline transform: suspend (S) -> T): Flow<T> =
     map(transform).distinctUntilChanged()
+
+inline fun <reified A : Action> Flow<Action>.specificActions(): Flow<A> =
+    filterIsInstance()
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified FS : State, reified TS : State> Flow<Any>.validTransitions(): Flow<Transition.Valid<Action, FS, TS>> =
