@@ -42,13 +42,13 @@ open class StateReserveHolder<S : State>(
     )
 
     protected val TAG by lazy { this::class.simpleName ?: "StateReserveHolder" }
-    protected val hotActions: Flow<Action> = this.stateReserve.hotActions
-    protected val coldActions: Flow<Action> = this.stateReserve.coldActions
+    protected val actions: Flow<Action> = this.stateReserve.actions
+    protected val actionStates: Flow<ActionState<Action, S>> = this.stateReserve.actionStates
     protected val scope = this.stateReserve.config.scope
 
     val states: Flow<S> = this.stateReserve.states
-    val eventActions: Flow<EventAction> = hotActions.filterIsInstance()
-    val navigateActions: Flow<NavigateAction> = hotActions.filterIsInstance()
+    val eventActions: Flow<EventAction> = actions.filterIsInstance()
+    val navigateActions: Flow<NavigateAction> = actions.filterIsInstance()
 
     fun state() = stateReserve.state()
 

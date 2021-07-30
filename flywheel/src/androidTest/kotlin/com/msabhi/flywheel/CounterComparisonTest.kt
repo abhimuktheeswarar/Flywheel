@@ -31,7 +31,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-class TrialTest {
+class CounterComparisonTest {
 
     @Volatile
     var sharedCounter = 0
@@ -117,7 +117,7 @@ class TrialTest {
         val completableDeferred = CompletableDeferred<TestCounterState>()
 
         val stateReserve = StateReserve(
-            initialState = InitialState.set(TestCounterState(9)),
+            initialState = InitialState.set(TestCounterState(0)),
             reduce = reduce,
             config = config,
             middlewares = null)

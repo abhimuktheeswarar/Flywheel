@@ -26,7 +26,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-class HotActionsTest {
+class ActionsTest {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
         when (action) {
@@ -110,7 +110,7 @@ class HotActionsTest {
     object SkipAction : SkipReducer
 
     @Test
-    fun testHotActionsOrder() = runBlockingTest {
+    fun testActionsOrder() = runBlockingTest {
         val stateReserve = stateReserve()
         val expectedActions = listOf(
             TestCounterAction.IncrementAction,
@@ -122,7 +122,7 @@ class HotActionsTest {
             SkipAction)
         val actions = arrayListOf<Action>()
         val job = launch {
-            stateReserve.hotActions.collect {
+            stateReserve.actions.collect {
                 actions.add(it)
             }
         }
@@ -151,7 +151,7 @@ class HotActionsTest {
             TestCounterAction.IncrementAction)
         val actions = arrayListOf<Action>()
         val job = launch {
-            stateReserve.hotActions.collect {
+            stateReserve.actions.collect {
                 actions.add(it)
             }
         }

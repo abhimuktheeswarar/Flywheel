@@ -19,7 +19,7 @@ package com.msabhi.androidApp.counter.ui
 import android.content.Context
 import com.msabhi.androidApp.base.BaseViewModel
 import com.msabhi.androidApp.counter.domain.middleware.EventMiddleware
-import com.msabhi.androidApp.counter.domain.sideeffects.CounterColdSideEffect
+import com.msabhi.androidApp.counter.domain.sideeffects.CounterSideEffect
 import com.msabhi.androidApp.counter.entities.CounterAction
 import com.msabhi.androidApp.counter.entities.CounterState
 import com.msabhi.flywheel.InitialState
@@ -65,7 +65,7 @@ class CounterViewModel(initialState: CounterState, stateReserve: StateReserve<Co
                 reduce = reducer,
                 middlewares = middlewares)
 
-            CounterColdSideEffect(stateReserve, DispatcherProviderImpl)
+            CounterSideEffect(stateReserve, DispatcherProviderImpl)
 
             return CounterViewModel(initialState = initialState.state!!,
                 stateReserve = stateReserve)

@@ -158,6 +158,7 @@ class StateMachineTest {
         stateReserve.dispatch(MaterialAction.OnVaporized)
         assertEquals(MaterialState.Gas, stateReserve.awaitState())
 
+        //Invalid transition
         stateReserve.dispatch(MaterialAction.OnMelted)
         assertEquals(MaterialState.Gas, stateReserve.awaitState())
 

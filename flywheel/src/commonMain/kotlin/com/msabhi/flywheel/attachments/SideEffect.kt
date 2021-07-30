@@ -17,87 +17,26 @@
 package com.msabhi.flywheel.attachments
 
 import com.msabhi.flywheel.Action
+import com.msabhi.flywheel.ActionState
 import com.msabhi.flywheel.State
 import com.msabhi.flywheel.StateReserve
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.Flow
 
-interface SideEffect {
-
-    fun handle(action: Action)
-}
-
-abstract class BaseSideEffectHot(
-    private val stateReserve: StateReserve<*>,
-    protected val dispatchers: DispatcherProvider,
-) : SideEffect {
-
-    protected val TAG: String = this::class.simpleName ?: "SideEffectHot"
-    protected val scope: CoroutineScope = stateReserve.config.scope
-
-    init {
-        stateReserve.hotActions.onEach(::handle).launchIn(scope)
-    }
-
-    fun dispatch(action: Action) {
-        stateReserve.dispatch(action)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <S : State> state(): S = stateReserve.state() as S
-
-    @Suppress("UNCHECKED_CAST")
-    suspend fun <S : State> awaitState(): S = stateReserve.awaitState() as S
-}
-
-abstract class BaseSideEffectCold(
-    private val stateReserve: StateReserve<*>,
-    protected val dispatchers: DispatcherProvider,
-) : SideEffect {
-
-    protected val TAG: String = this::class.simpleName ?: "SideEffectCold"
-    protected val scope: CoroutineScope = stateReserve.config.scope
-
-    init {
-        stateReserve.coldActions.onEach(::handle).launchIn(scope)
-    }
-
-    fun dispatch(action: Action) {
-        stateReserve.dispatch(action)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <S : State> state(): S = stateReserve.state() as S
-
-    @Suppress("UNCHECKED_CAST")
-    suspend fun <S : State> awaitState(): S = stateReserve.awaitState() as S
-}
-
-abstract class BaseSideEffectHotCold(
-    private val stateReserve: StateReserve<*>,
+abstract class SideEffect<S : State>(
+    private val stateReserve: StateReserve<S>,
     protected val dispatchers: DispatcherProvider,
 ) {
 
-    protected val TAG: String = this::class.simpleName ?: "SideEffectHotCold"
     protected val scope: CoroutineScope = stateReserve.config.scope
 
-    init {
-        stateReserve.hotActions.onEach(::handleHot).launchIn(scope)
-        stateReserve.coldActions.onEach(::handleCold).launchIn(scope)
-    }
+    protected val actions: Flow<Action> = stateReserve.actions
+    protected val actionStates: Flow<ActionState<Action, S>> = stateReserve.actionStates
+    protected val transitions: Flow<Any> = stateReserve.transitions
 
     fun dispatch(action: Action) {
         stateReserve.dispatch(action)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <S : State> state(): S = stateReserve.state() as S
-
-    @Suppress("UNCHECKED_CAST")
-    suspend fun <S : State> awaitState(): S = stateReserve.awaitState() as S
-
-    abstract fun handleHot(action: Action)
-
-    abstract fun handleCold(action: Action)
+    suspend fun awaitState(): S = stateReserve.awaitState()
 }

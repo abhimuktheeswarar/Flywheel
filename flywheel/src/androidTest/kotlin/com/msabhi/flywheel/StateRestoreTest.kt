@@ -75,11 +75,11 @@ class StateRestoreTest {
         val scope = TestCoroutineScope()
         val stateReserve = stateReserve(scope, InitialState.deferredSet())
 
-        var hotActionsCount = 0
-        val hotJob = launch { stateReserve.hotActions.collect { hotActionsCount++ } }
+        var actionsCount = 0
+        val actionsJob = launch { stateReserve.actions.collect { actionsCount++ } }
 
-        var coldActionsCount = 0
-        val coldJob = launch { stateReserve.coldActions.collect { coldActionsCount++ } }
+        var actionStatesCount = 0
+        val actionStatesJob = launch { stateReserve.actionStates.collect { actionStatesCount++ } }
 
         var state: TestCounterState? = null
         val stateJob = launch { state = stateReserve.awaitState() }
@@ -87,8 +87,8 @@ class StateRestoreTest {
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
 
-        assertEquals(2, hotActionsCount)
-        assertEquals(0, coldActionsCount)
+        assertEquals(2, actionsCount)
+        assertEquals(0, actionStatesCount)
 
         assertNull(state)
 
@@ -96,8 +96,8 @@ class StateRestoreTest {
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         assertEquals(4, stateReserve.awaitState().count)
 
-        assertEquals(3, hotActionsCount)
-        assertEquals(3, coldActionsCount)
+        assertEquals(3, actionsCount)
+        assertEquals(3, actionStatesCount)
 
         assertNotNull(state)
 
@@ -106,8 +106,8 @@ class StateRestoreTest {
                 TestCounterState())
         }.exceptionOrNull())
 
-        hotJob.cancel()
-        coldJob.cancel()
+        actionsJob.cancel()
+        actionStatesJob.cancel()
         stateJob.cancel()
     }
 }
