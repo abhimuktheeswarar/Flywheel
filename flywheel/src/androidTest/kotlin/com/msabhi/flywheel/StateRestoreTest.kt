@@ -67,17 +67,6 @@ class StateRestoreTest {
             stateReserve.restoreState(
                 TestCounterState())
         }.exceptionOrNull())
-
-
-        /* val stateReserveWithDeferredState =
-             stateReserve(TestCoroutineScope(), InitialState.deferredSet())
-
-         stateReserveWithInitialState.restoreState(TestCounterState(10))
-         assertEquals(10, stateReserveWithInitialState.awaitState().count)
-         stateReserveWithInitialState.dispatch(TestCounterAction.IncrementAction)
-         assertEquals(11, stateReserveWithInitialState.awaitState().count)
-         // stateReserve.restoreState(TestCounterState(20))
-         assertEquals(20, stateReserveWithInitialState.awaitState().count)*/
     }
 
     @Test

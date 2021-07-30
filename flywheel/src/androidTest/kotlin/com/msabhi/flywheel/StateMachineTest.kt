@@ -22,24 +22,29 @@ import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class StateMachineTest {
 
-    sealed class MaterialState : State {
+    internal sealed class MaterialState : State {
         object Solid : MaterialState()
         object Liquid : MaterialState()
         object Gas : MaterialState()
+        data class Quantum(val states: MutableMap<Int, MaterialState>) :
+            MaterialState()
     }
 
-    sealed class MaterialAction : Action {
+    internal sealed class MaterialAction : Action {
         object OnMelted : MaterialAction()
         object OnFrozen : MaterialAction()
         object OnVaporized : MaterialAction()
         object OnCondensed : MaterialAction()
+        data class OnQuantum(val id: Int, val state: MaterialState) :
+            MaterialAction()
     }
 
-    sealed class MaterialSideEffect {
+    internal sealed class MaterialSideEffect {
         object LogMelted : MaterialSideEffect()
         object LogFrozen : MaterialSideEffect()
         object LogVaporized : MaterialSideEffect()
@@ -63,6 +68,12 @@ class StateMachineTest {
                     MaterialAction.OnCondensed -> MaterialState.Liquid
                     else -> reduceError()
                 }
+                is MaterialState.Quantum -> when (action) {
+                    is MaterialAction.OnQuantum -> state.apply {
+                        this.states[action.id] = action.state
+                    }
+                    else -> reduceError()
+                }
             }
         }
 
@@ -70,10 +81,13 @@ class StateMachineTest {
         scope: CoroutineScope,
         initialState: S,
         reduce: Reduce<S>,
+        debugMode: Boolean,
         middlewares: List<Middleware<S>>? = null,
     ): StateReserve<S> {
         val config =
-            StateReserveConfig(scope = scope, debugMode = false, enhancedStateMachine = true)
+            StateReserveConfig(scope = scope,
+                debugMode = debugMode,
+                enhancedStateMachine = true)
 
         return StateReserve(config, InitialState.set(initialState), reduce, middlewares)
     }
@@ -84,6 +98,7 @@ class StateMachineTest {
         val stateReserve =
             getStateReserve(scope = scope,
                 initialState = MaterialState.Solid,
+                debugMode = false,
                 reduce = materialReducer)
 
         var simpleValidTransitions = 0
@@ -125,14 +140,12 @@ class StateMachineTest {
         val j5 = launch(CoroutineName("j5")) {
             stateReserve.transitions.onExit<MaterialAction.OnMelted, MaterialState.Solid>()
                 .collect {
-                    println("onExit = $it")
                     onExit++
                 }
         }
         val j6 = launch(CoroutineName("j6")) {
             stateReserve.transitions.onEnter<MaterialAction.OnMelted, MaterialState.Liquid>()
                 .collect {
-                    //println("onEnter = $it")
                     onEnter++
                 }
         }
@@ -155,5 +168,45 @@ class StateMachineTest {
         assertEquals(1, onEnter)
         jobs.forEach { it.cancel() }
         scope.cancel()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun stateMutabilityTest(): Unit = runBlockingTest {
+        val scope = TestCoroutineScope(SupervisorJob())
+        val stateReserve =
+            getStateReserve(scope = scope,
+                initialState = MaterialState.Quantum(mutableMapOf(1 to MaterialState.Solid)),
+                debugMode = true,
+                reduce = materialReducer)
+
+        assertIs<MaterialState.Quantum>(stateReserve.awaitState())
+        stateReserve.dispatch(MaterialAction.OnQuantum(1, MaterialState.Liquid))
+
+        stateReserve.terminate()
+    }
+
+    @Test
+    fun invalidActionForStateTest(): Unit = runBlockingTest {
+        val scope = TestCoroutineScope(SupervisorJob())
+        val stateReserve =
+            getStateReserve(scope = scope,
+                initialState = MaterialState.Solid,
+                debugMode = false,
+                reduce = materialReducer)
+
+        var inValidTransitions = 0
+
+        val j0 = launch(CoroutineName("j0")) {
+            stateReserve.transitions.inValidTransition<MaterialAction, MaterialState>()
+                .collect {
+                    println(it)
+                    inValidTransitions++
+                }
+        }
+
+        stateReserve.dispatch(MaterialAction.OnFrozen)
+        assertEquals(1, inValidTransitions)
+        j0.cancel()
+        stateReserve.terminate()
     }
 }

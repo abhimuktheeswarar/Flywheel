@@ -122,7 +122,7 @@ sealed interface Transition<out A : Action, out S : State> {
     data class InValid<out A : Action, out S : State>(
         override val action: A,
         override val fromState: S,
-        val exception: Exception = UnsupportedStateTransition("Unsupported state transition attempted with ${fromState::class.simpleName} for action ${action.name()}"),
+        val exception: Exception = UnsupportedStateTransition("Unsupported state transition attempted with state ${fromState::class.simpleName} for action ${action.name()}"),
     ) : Transition<A, S>
 }
 
