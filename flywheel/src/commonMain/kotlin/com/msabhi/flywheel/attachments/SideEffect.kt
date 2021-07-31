@@ -31,7 +31,7 @@ abstract class SideEffect<S : State>(
     protected val scope: CoroutineScope = stateReserve.config.scope
 
     protected val actions: Flow<Action> = stateReserve.actions
-    protected val actionStates: Flow<ActionState<Action, S>> = stateReserve.actionStates
+    protected val actionStates: Flow<ActionState.Always<Action, S>> = stateReserve.actionStates
     protected val transitions: Flow<Any> = stateReserve.transitions
 
     fun dispatch(action: Action) {

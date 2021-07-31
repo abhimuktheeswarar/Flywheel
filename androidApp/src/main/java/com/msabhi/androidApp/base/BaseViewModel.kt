@@ -40,7 +40,7 @@ open class BaseViewModel<S : State>(
 
     protected val TAG by lazy { this::class.simpleName ?: "FlywheelViewModel" }
     protected val actions: Flow<Action> = this.stateReserve.actions
-    protected val actionStates: Flow<ActionState<Action, S>> = this.stateReserve.actionStates
+    protected val actionStates: Flow<ActionState.Always<Action, S>> = this.stateReserve.actionStates
     protected val scope = this.stateReserve.config.scope
 
     val states: Flow<S> = this.stateReserve.states

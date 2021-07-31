@@ -98,7 +98,7 @@ class HotActionsTest {
             StateReserveConfig(
                 scope = TestCoroutineScope(),
                 debugMode = false)
-        return StateReserve(initialState = TestCounterState(count = 0),
+        return StateReserve(initialState = InitialState.set(TestCounterState(count = 0)),
             reduce = reduce,
             config = config,
             middlewares = listOf(plainMiddleware,
@@ -122,7 +122,7 @@ class HotActionsTest {
             SkipAction)
         val actions = arrayListOf<Action>()
         val job = launch {
-            stateReserve.hotActions.collect {
+            stateReserve.actions.collect {
                 actions.add(it)
             }
         }
@@ -151,7 +151,7 @@ class HotActionsTest {
             TestCounterAction.IncrementAction)
         val actions = arrayListOf<Action>()
         val job = launch {
-            stateReserve.hotActions.collect {
+            stateReserve.actions.collect {
                 actions.add(it)
             }
         }
