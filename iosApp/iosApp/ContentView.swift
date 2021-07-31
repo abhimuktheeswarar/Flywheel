@@ -65,7 +65,7 @@ class CounterViewModel : ObservableObject {
             // code which is executed if the Flow object completed
         }
         
-        stateReserveHolder.coldActions.collect(collector: Collector<Action> { action in
+        stateReserveHolder.actions.collect(collector: Collector<Action> { action in
             debugPrint("action = \(action) | state = \(self.state.count)")
             if(self.state.count ==  -10) {
                 self.dispatch(action: CounterResetAction())
@@ -75,7 +75,7 @@ class CounterViewModel : ObservableObject {
             
         }
         
-        CounterSideEffect.init(stateReserve: stateReserveHolder.stateReserve as! StateReserve<AnyObject>, dispatchers: DispatcherProviderImpl.init())
+        CounterSideEffect.init(stateReserve: stateReserveHolder.stateReserve, dispatchers: DispatcherProviderImpl.init())
     }
     
     func reduce(action:Action,currentState :CounterState)  -> CounterState {
@@ -110,12 +110,23 @@ class CounterViewModel : ObservableObject {
 
 
 
-class CounterSideEffect: BaseSideEffectCold {
+class CounterSideEffect: SideEffect<CounterState> {
     
-    override func handle(action: Action) {
-        let counterState = state() as! CounterState
-        debugPrint("count = \(counterState.count)")
-        if(counterState.count ==  10) {
+    
+    override init(stateReserve: StateReserve<CounterState>, dispatchers: DispatcherProvider) {
+        super.init(stateReserve: stateReserve, dispatchers: dispatchers)
+        stateReserve.actionStates.collect(collector: Collector<ActionStateAlways<Action,CounterState>> { actionState in
+            self.handle(action: actionState.action, state: actionState.state)
+            
+        }) { (unit, error) in
+            // code which is executed if the Flow object completed
+        }
+        
+    }
+    
+    func handle(action: Action, state :CounterState) {
+        debugPrint("count = \(state.count)")
+        if(state.count ==  10) {
             self.dispatch(action: CounterResetAction())
         }
     }
