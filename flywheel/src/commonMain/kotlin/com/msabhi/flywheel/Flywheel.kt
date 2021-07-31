@@ -163,7 +163,7 @@ sealed interface ActionState<out A : Action, out S : State> {
 
     /**
      * This will be emitted by `transitions` Flow<Any> when a new state is entered.
-     * Useful when modeling a StateMachine behaviour..
+     * Useful when modeling a StateMachine behaviour.
      */
     data class OnEnter<out A : Action, out S : State>(
         override val action: A,
