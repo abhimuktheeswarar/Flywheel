@@ -31,7 +31,10 @@ class PureReducerValidationTest {
     @Suppress("DEPRECATION")
     var thrown = ExpectedException.none()!!
 
-    private fun <S : State> stateReserve(initialState: S, reduce: Reduce<S>): StateReserve<S> {
+    private fun <S : State> stateReserve(
+        initialState: InitialState<S>,
+        reduce: Reduce<S>,
+    ): StateReserve<S> {
         val config =
             StateReserveConfig(
                 scope = TestCoroutineScope(TestCoroutineDispatcher()),
@@ -52,7 +55,7 @@ class PureReducerValidationTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCounterState(), reduce)
+        val stateReserve = stateReserve(InitialState.set(TestCounterState()), reduce)
         thrown.expect(IllegalArgumentException::class.java)
         thrown.expectMessage("Impure reducer used!")
         stateReserve.dispatch(TestCounterAction.IncrementAction)
@@ -66,7 +69,7 @@ class PureReducerValidationTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCounterState(), reduce)
+        val stateReserve = stateReserve(InitialState.set(TestCounterState()), reduce)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
     }
 }

@@ -20,18 +20,25 @@ import com.msabhi.androidApp.common.ShowToastAction
 import com.msabhi.androidApp.counter.entities.CounterAction
 import com.msabhi.androidApp.counter.entities.CounterState
 import com.msabhi.flywheel.Action
+import com.msabhi.flywheel.ActionState
 import com.msabhi.flywheel.StateReserve
-import com.msabhi.flywheel.attachments.BaseSideEffectCold
 import com.msabhi.flywheel.attachments.DispatcherProvider
+import com.msabhi.flywheel.attachments.SideEffect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
-class CounterColdSideEffect(stateReserve: StateReserve<*>, dispatchers: DispatcherProvider) :
-    BaseSideEffectCold(stateReserve, dispatchers) {
+class CounterSideEffect(stateReserve: StateReserve<CounterState>, dispatchers: DispatcherProvider) :
+    SideEffect<CounterState>(stateReserve, dispatchers) {
 
-    override fun handle(action: Action) {
-        when (action) {
+    init {
+        actionStates.onEach(::handle).launchIn(scope)
+    }
+
+    private fun handle(actionState: ActionState<Action, CounterState>) {
+        when (actionState.action) {
 
             is CounterAction.ResetAction -> {
-                if (state<CounterState>().counter == 0) {
+                if (actionState.state.counter == 0) {
                     dispatch(ShowToastAction("Reset complete"))
                 }
             }

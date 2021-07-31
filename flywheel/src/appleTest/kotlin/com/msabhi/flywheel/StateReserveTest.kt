@@ -46,7 +46,7 @@ class StateReserveTest : BaseTest() {
             StateReserveConfig(
                 scope = scope,
                 debugMode = false)
-        return StateReserve(initialState = TestCounterState(count = 1),
+        return StateReserve(initialState = InitialState.set(TestCounterState(1)),
             reduce = reduce,
             config = config,
             middlewares = null)

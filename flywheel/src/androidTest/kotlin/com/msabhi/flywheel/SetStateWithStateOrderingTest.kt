@@ -38,7 +38,7 @@ class SetStateWithStateOrderingTest {
             StateReserveConfig(
                 scope = scope,
                 debugMode = false)
-        return StateReserve(initialState = TestCounterState(),
+        return StateReserve(initialState = InitialState.set(TestCounterState()),
             reduce = reduce,
             config = config,
             middlewares = null)

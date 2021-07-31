@@ -26,16 +26,16 @@ import kotlinx.coroutines.flow.toList
 import org.junit.Assert
 import org.junit.Test
 
-class ColdSideEffectReplayTest {
+class ActionStatesReplayTest {
 
-    @Test
+    @Test(timeout = 5000)
     fun replayTest() = runBlocking {
         repeat(1) {
             singleReplayTestIteration(N = 200, subscribers = 1)
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     fun replayLargeTest() = runBlocking {
         singleReplayTestIteration(N = 100_000, subscribers = 10)
     }
@@ -60,8 +60,9 @@ class ColdSideEffectReplayTest {
                 StateReserveConfig(
                     scope = scope,
                     debugMode = false)
+
             val stateReserve =
-                StateReserve(initialState = TestCounterState(),
+                StateReserve(initialState = InitialState.set(TestCounterState()),
                     reduce = reduce,
                     config = config,
                     middlewares = null)
@@ -78,7 +79,7 @@ class ColdSideEffectReplayTest {
                     launch {
                         // Since only increase by 1 reducers are applied
                         // it's expected to see monotonously increasing sequence with no missing values
-                        stateReserve.coldActions.map { stateReserve.awaitState() }
+                        stateReserve.actionStates.map { stateReserve.awaitState() }
                             .takeWhile { it.count < N }.toList().zipWithNext { a, b ->
                                 Assert.assertEquals(a.count + 1, b.count)
                             }
@@ -104,13 +105,13 @@ class ColdSideEffectReplayTest {
                 scope = scope,
                 debugMode = false)
         val stateReserve =
-            StateReserve(initialState = TestCounterState(),
+            StateReserve(initialState = InitialState.set(TestCounterState()),
                 reduce = reduce,
                 config = config,
                 middlewares = null)
 
         val collectJob = async(start = CoroutineStart.UNDISPATCHED) {
-            stateReserve.coldActions.map { stateReserve.state() }.collect {
+            stateReserve.actionStates.map { stateReserve.state() }.collect {
                 delay(Long.MAX_VALUE)
             }
         }
@@ -119,7 +120,7 @@ class ColdSideEffectReplayTest {
         val n = 200
         coroutineScope {
             async(start = CoroutineStart.UNDISPATCHED) {
-                stateReserve.coldActions.map { stateReserve.state() }.takeWhile { it.count < n }
+                stateReserve.actionStates.map { stateReserve.state() }.takeWhile { it.count < n }
                     .collect {
                         // no-op
                     }

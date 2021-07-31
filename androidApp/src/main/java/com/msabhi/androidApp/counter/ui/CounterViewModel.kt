@@ -19,9 +19,10 @@ package com.msabhi.androidApp.counter.ui
 import android.content.Context
 import com.msabhi.androidApp.base.BaseViewModel
 import com.msabhi.androidApp.counter.domain.middleware.EventMiddleware
-import com.msabhi.androidApp.counter.domain.sideeffects.CounterColdSideEffect
+import com.msabhi.androidApp.counter.domain.sideeffects.CounterSideEffect
 import com.msabhi.androidApp.counter.entities.CounterAction
 import com.msabhi.androidApp.counter.entities.CounterState
+import com.msabhi.flywheel.InitialState
 import com.msabhi.flywheel.StateReserve
 import com.msabhi.flywheel.attachments.DispatcherProviderImpl
 import com.msabhi.flywheel.reducerForAction
@@ -56,7 +57,7 @@ class CounterViewModel(initialState: CounterState, stateReserve: StateReserve<Co
                 listOf(EventMiddleware(WeakReference(context), scope, DispatcherProviderImpl).get(),
                     skipMiddleware)
 
-            val initialState = CounterState()
+            val initialState = InitialState.set(CounterState())
 
             val stateReserve = StateReserve(
                 config = getDefaultStateReserveConfig(scope),
@@ -64,9 +65,10 @@ class CounterViewModel(initialState: CounterState, stateReserve: StateReserve<Co
                 reduce = reducer,
                 middlewares = middlewares)
 
-            CounterColdSideEffect(stateReserve, DispatcherProviderImpl)
+            CounterSideEffect(stateReserve, DispatcherProviderImpl)
 
-            return CounterViewModel(initialState = initialState, stateReserve = stateReserve)
+            return CounterViewModel(initialState = initialState.state!!,
+                stateReserve = stateReserve)
         }
     }
 }
