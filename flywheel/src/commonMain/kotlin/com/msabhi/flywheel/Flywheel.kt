@@ -488,6 +488,12 @@ inline fun <reified A : Action> Flow<Action>.specificActions(): Flow<A> =
     filterIsInstance()
 
 /**
+ * Returns a flow containing only [Action] from `actionStates` flow
+ */
+inline fun <reified A : Action> Flow<ActionState.Always<A, State>>.onlyActions(): Flow<A> =
+    map { it.action }
+
+/**
  * Returns a flow containing valid transitions of from state [FS] and to state [TS].
  */
 @Suppress("UNCHECKED_CAST")
@@ -504,10 +510,18 @@ inline fun <reified A : Action, reified FS : State, reified TS : State> Flow<Any
         .filter { it.action is A && it.fromState is FS && (it is Transition.Valid<*, *, *> && it.toState is TS) } as Flow<Transition.Valid<A, FS, TS>>
 
 /**
+ * Returns a flow containing invalid transitions for state [S].
+ */
+@Suppress("UNCHECKED_CAST")
+inline fun <reified S : State> Flow<Any>.inValidTransition(): Flow<Transition.InValid<Action, S>> =
+    filterIsInstance<Transition<*, *>>()
+        .filter { (it is Transition.InValid<*, *>) && it.fromState is S } as Flow<Transition.InValid<Action, S>>
+
+/**
  * Returns a flow containing invalid transitions for action [A] and state [S].
  */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified A : Action, reified S : State> Flow<Any>.inValidTransition(): Flow<Transition.InValid<A, S>> =
+inline fun <reified A : Action, reified S : State> Flow<Any>.inValidTransitionWithAction(): Flow<Transition.InValid<A, S>> =
     filterIsInstance<Transition<*, *>>()
         .filter { it.action is A && (it is Transition.InValid<*, *>) && it.fromState is S } as Flow<Transition.InValid<A, S>>
 
@@ -515,15 +529,15 @@ inline fun <reified A : Action, reified S : State> Flow<Any>.inValidTransition()
  * Returns a flow when a state [S] is entered for action [A].
  */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified A : Action, reified S : State> Flow<Any>.onEnter(): Flow<ActionState.OnEnter<A, S>> =
+inline fun <reified S : State> Flow<Any>.onEnter(): Flow<ActionState.OnEnter<Action, S>> =
     filterIsInstance<ActionState.OnEnter<*, *>>()
-        .filter { it.action is A && it.state is S } as Flow<ActionState.OnEnter<A, S>>
+        .filter { it.state is S } as Flow<ActionState.OnEnter<Action, S>>
 
 /**
  * Returns a flow when a state [S] is exited for action [A].
  */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified A : Action, reified S : State> Flow<Any>.onExit(): Flow<ActionState.OnExit<A, S>> =
+inline fun <reified S : State> Flow<Any>.onExit(): Flow<ActionState.OnExit<Action, S>> =
     filterIsInstance<ActionState.OnExit<*, *>>()
-        .filter { it.action is A && it.state is S } as Flow<ActionState.OnExit<A, S>>
+        .filter { it.state is S } as Flow<ActionState.OnExit<Action, S>>
 

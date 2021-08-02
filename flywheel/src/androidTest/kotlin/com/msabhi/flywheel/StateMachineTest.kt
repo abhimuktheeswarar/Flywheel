@@ -132,19 +132,19 @@ class StateMachineTest {
                 }
         }
         val j4 = launch(CoroutineName("j4")) {
-            stateReserve.transitions.inValidTransition<MaterialAction, MaterialState>()
+            stateReserve.transitions.inValidTransition<MaterialState>()
                 .collect {
                     inValidTransitions++
                 }
         }
         val j5 = launch(CoroutineName("j5")) {
-            stateReserve.transitions.onExit<MaterialAction.OnMelted, MaterialState.Solid>()
+            stateReserve.transitions.onExit<MaterialState.Solid>()
                 .collect {
                     onExit++
                 }
         }
         val j6 = launch(CoroutineName("j6")) {
-            stateReserve.transitions.onEnter<MaterialAction.OnMelted, MaterialState.Liquid>()
+            stateReserve.transitions.onEnter<MaterialState.Liquid>()
                 .collect {
                     onEnter++
                 }
@@ -198,7 +198,7 @@ class StateMachineTest {
         var inValidTransitions = 0
 
         val j0 = launch(CoroutineName("j0")) {
-            stateReserve.transitions.inValidTransition<MaterialAction, MaterialState>()
+            stateReserve.transitions.inValidTransitionWithAction<MaterialAction, MaterialState>()
                 .collect {
                     println(it)
                     inValidTransitions++

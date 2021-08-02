@@ -114,7 +114,7 @@ This is how a simple counter example looks like.
 
     ```Kotlin
     val stateReserve = StateReserve(
-        initialState = CounterState(),
+        initialState = InitialState.set(CounterState()),
         reduce = reduce)
     ```
 

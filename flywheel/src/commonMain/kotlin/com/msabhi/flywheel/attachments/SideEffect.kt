@@ -38,5 +38,7 @@ abstract class SideEffect<S : State>(
         stateReserve.dispatch(action)
     }
 
+    fun state(): S = stateReserve.state()
+
     suspend fun awaitState(): S = stateReserve.awaitState()
 }
