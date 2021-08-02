@@ -435,6 +435,7 @@ __attribute__((swift_name("SideEffect")))
 */
 - (void)awaitStateWithCompletionHandler:(void (^)(S _Nullable, NSError * _Nullable))completionHandler __attribute__((swift_name("awaitState(completionHandler:)")));
 - (void)dispatchAction:(id<FlywheelAction>)action __attribute__((swift_name("dispatch(action:)")));
+- (S)state_ __attribute__((swift_name("state()")));
 @property (readonly) id<FlywheelKotlinx_coroutines_coreFlow> actionStates __attribute__((swift_name("actionStates")));
 @property (readonly) id<FlywheelKotlinx_coroutines_coreFlow> actions __attribute__((swift_name("actions")));
 @property (readonly) id<FlywheelDispatcherProvider> dispatchers __attribute__((swift_name("dispatchers")));
@@ -471,8 +472,10 @@ __attribute__((swift_name("FlywheelKt")))
 + (void)reduceError __attribute__((swift_name("reduceError()")));
 + (id<FlywheelState> (^)(id<FlywheelAction>, id<FlywheelState>))reducerForActionReducer:(id<FlywheelState> (^)(id<FlywheelAction>, id<FlywheelState>))reducer __attribute__((swift_name("reducerForAction(reducer:)")));
 + (id<FlywheelKotlinx_coroutines_coreFlow>)inValidTransition:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("inValidTransition(_:)")));
++ (id<FlywheelKotlinx_coroutines_coreFlow>)inValidTransitionWithAction:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("inValidTransitionWithAction(_:)")));
 + (id<FlywheelKotlinx_coroutines_coreFlow>)onEnter:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("onEnter(_:)")));
 + (id<FlywheelKotlinx_coroutines_coreFlow>)onExit:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("onExit(_:)")));
++ (id<FlywheelKotlinx_coroutines_coreFlow>)onlyActions:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("onlyActions(_:)")));
 + (id _Nullable (^)(id<FlywheelAction>, id _Nullable))plus:(id _Nullable (^)(id<FlywheelAction>, id _Nullable))receiver other:(id _Nullable (^)(id<FlywheelAction>, id _Nullable))other __attribute__((swift_name("plus(_:other:)")));
 + (id<FlywheelKotlinx_coroutines_coreFlow>)specificActions:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver __attribute__((swift_name("specificActions(_:)")));
 + (id<FlywheelKotlinx_coroutines_coreFlow>)specificStates:(id<FlywheelKotlinx_coroutines_coreFlow>)receiver transform:(id<FlywheelKotlinSuspendFunction1>)transform __attribute__((swift_name("specificStates(_:transform:)")));
