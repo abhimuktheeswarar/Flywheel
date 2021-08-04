@@ -51,7 +51,7 @@ kotlin {
         }
     }
     android {
-        publishLibraryVariants("release")
+        publishAllLibraryVariants()
         publishLibraryVariantsGroupedByFlavor = true
     }
     js(BOTH) {
