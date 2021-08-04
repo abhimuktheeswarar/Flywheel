@@ -41,7 +41,7 @@ kotlin {
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel:1.1.2-RC")
+    implementation("com.msabhi:flywheel-android:1.1.2-RC")
 }
 ```
 
