@@ -60,11 +60,6 @@ interface ErrorAction : Action {
 interface SkipReducer : Action
 
 /**
- * Internal Action to force distinct actions even when same actions are received in dispatch.
- */
-private object ForceDistinctAction : Action
-
-/**
  * Objects holding the state of a application/feature must implement [State].
  */
 interface State
@@ -339,17 +334,17 @@ class StateReserve<S : State>(
     val states: Flow<S> = setStates
 
     /**
+     * Returns a [Flow] of actions that are passed through reducer.
+     */
+    val actionStates: Flow<ActionState.Always<Action, S>> = transitionsMutable.filterIsInstance()
+
+    /**
      * Returns a [Flow] of actions that are passed through middleware and before reaching reducer.
      * This also captures actions modified by middlewares.
      * It is useful to react immediately to an received action.
      */
     val actions: Flow<Action> =
-        mutableActions.distinctUntilChanged().filterNot { it is ForceDistinctAction }
-
-    /**
-     * Returns a [Flow] of actions that are passed through reducer.
-     */
-    val actionStates: Flow<ActionState.Always<Action, S>> = transitionsMutable.filterIsInstance()
+        merge(mutableActions, actionStates.map { it.action }).distinctUntilChanged()
 
     /**
      * Enable `enhancedStateMachine` config to listen for `transitions`.
@@ -367,6 +362,7 @@ class StateReserve<S : State>(
     }
 
     init {
+
         config.scope.stateMachine(
             initialState = initialState,
             inputActions = inputActionsChannel,
@@ -378,16 +374,12 @@ class StateReserve<S : State>(
             ignoreDuplicateState = config.ignoreDuplicateState,
             enhancedStateMachine = config.enhancedStateMachine
         )
-
-        initialState.deferredState?.invokeOnCompletion { }
     }
 
     private fun dispatcher(action: Action) {
         if (config.debugMode && config.assertStateValues) {
             assertStateValues(action, state(), reduce, mutableStateChecker)
         }
-        mutableActions.tryEmit(action)
-        mutableActions.tryEmit(ForceDistinctAction)
         inputActionsChannel.trySend(action)
     }
 
