@@ -20,10 +20,7 @@ import com.msabhi.flywheel.utilities.MutableStateChecker
 import com.msabhi.flywheel.utilities.assertStateValues
 import com.msabhi.flywheel.utilities.name
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 
@@ -58,6 +55,11 @@ interface ErrorAction : Action {
  * Example: A `ShowToastAction` doesn't have to pass through a reducer, so it can implement [SkipReducer].
  */
 interface SkipReducer : Action
+
+/**
+ * Internal Action to force distinct actions even when same actions are received in dispatch.
+ */
+private object ForceDistinctAction : Action
 
 /**
  * Objects holding the state of a application/feature must implement [State].
@@ -299,6 +301,9 @@ class StateReserve<S : State>(
     middlewares: List<Middleware<S>>?,
 ) {
 
+    private val actionsChannel: Channel<Action> =
+        Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
+
     private val inputActionsChannel: Channel<Action> =
         Channel(capacity = Channel.UNLIMITED, onBufferOverflow = BufferOverflow.SUSPEND)
 
@@ -344,7 +349,7 @@ class StateReserve<S : State>(
      * It is useful to react immediately to an received action.
      */
     val actions: Flow<Action> =
-        merge(mutableActions, actionStates.map { it.action }).distinctUntilChanged()
+        mutableActions.distinctUntilChanged().filterNot { it is ForceDistinctAction }
 
     /**
      * Enable `enhancedStateMachine` config to listen for `transitions`.
@@ -363,6 +368,15 @@ class StateReserve<S : State>(
 
     init {
 
+        config.scope.launch {
+            actionsChannel.consumeEach { action ->
+                if (isActive) {
+                    mutableActions.tryEmit(action)
+                    this@StateReserve.middlewares?.invoke(action) ?: dispatcher(action)
+                }
+            }
+        }
+
         config.scope.stateMachine(
             initialState = initialState,
             inputActions = inputActionsChannel,
@@ -380,6 +394,8 @@ class StateReserve<S : State>(
         if (config.debugMode && config.assertStateValues) {
             assertStateValues(action, state(), reduce, mutableStateChecker)
         }
+        mutableActions.tryEmit(action)
+        mutableActions.tryEmit(ForceDistinctAction)
         inputActionsChannel.trySend(action)
     }
 
@@ -387,8 +403,7 @@ class StateReserve<S : State>(
      * It is the entry point for actions to update the StateReserve's state.
      */
     fun dispatch(action: Action) {
-        mutableActions.tryEmit(action)
-        middlewares?.invoke(action) ?: dispatcher(action)
+        actionsChannel.trySend(action)
     }
 
     /**
