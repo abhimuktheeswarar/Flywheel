@@ -24,14 +24,22 @@ import com.msabhi.flywheel.ActionState
 import com.msabhi.flywheel.StateReserve
 import com.msabhi.flywheel.attachments.DispatcherProvider
 import com.msabhi.flywheel.attachments.SideEffect
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 class CounterSideEffect(stateReserve: StateReserve<CounterState>, dispatchers: DispatcherProvider) :
     SideEffect<CounterState>(stateReserve, dispatchers) {
 
     init {
+        //Used start = CoroutineStart.UNDISPATCHED to ensure the actions are collected, especially, the very first actions
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { actions.collect(::handle) }
         actionStates.onEach(::handle).launchIn(scope)
+    }
+
+    private fun handle(action: Action) {
     }
 
     private fun handle(actionState: ActionState<Action, CounterState>) {
