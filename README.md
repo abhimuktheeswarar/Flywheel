@@ -50,17 +50,6 @@ dependencies {
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
 
-You can use CocoaPods to install Flywheel by adding it to your `Podfile`:
-```
-use_frameworks!
-
-target 'MyApp' do
-
-    pod 'Flywheel', '~> 1.1.4-RC'
-
-end
-```
-
 You can use the [Swift Package Manager](https://swift.org/package-manager) to install `Flywheel` by adding the proper description to your `Package.swift` file:
 
 ```swift
