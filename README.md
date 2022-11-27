@@ -2,7 +2,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.msabhi/flywheel?style=flat)](https://search.maven.org/search?q=com.msabhi.flywheel)
 [![GitHub License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-1.5.21-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-1.7.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
 ![badge-android](https://img.shields.io/badge/platform-android-3DDC84.svg?style=flat)
 ![badge-jvm](https://img.shields.io/badge/platform-jvm-red.svg?style=flat)
 ![badge-apple](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-lightgrey?style=flat)
