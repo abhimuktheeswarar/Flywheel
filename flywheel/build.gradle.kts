@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     kotlin("multiplatform")
-    kotlin("native.cocoapods")
     id("com.android.library")
     id("org.jetbrains.dokka") version Versions.dokka
     id("maven-publish")
@@ -27,20 +26,28 @@ val POM_LICENCE_DIST: String by project
 val POM_DEVELOPER_ID: String by project
 val POM_DEVELOPER_NAME: String by project
 val POM_DEVELOPER_EMAIL: String = gradleLocalProperties(
-    rootDir).getProperty("POM_DEVELOPER_EMAIL",
-    System.getenv("POM_DEVELOPER_EMAIL"))
+    rootDir
+).getProperty(
+    "POM_DEVELOPER_EMAIL",
+    System.getenv("POM_DEVELOPER_EMAIL")
+)
 
 val SONATYPE_USERNAME: String = gradleLocalProperties(
-    rootDir).getProperty("SONATYPE_USERNAME",
-    System.getenv("SONATYPE_USERNAME"))
+    rootDir
+).getProperty(
+    "SONATYPE_USERNAME",
+    System.getenv("SONATYPE_USERNAME")
+)
 
 val SONATYPE_PASSWORD: String = gradleLocalProperties(
-    rootDir).getProperty("SONATYPE_PASSWORD",
-    System.getenv("SONATYPE_PASSWORD"))
+    rootDir
+).getProperty(
+    "SONATYPE_PASSWORD",
+    System.getenv("SONATYPE_PASSWORD")
+)
 
 group = GROUP
 version = VERSION_NAME
-
 kotlin {
     jvm {
         compilations.all {
@@ -58,10 +65,23 @@ kotlin {
         browser()
         nodejs()
     }
-    ios()
-    watchos()
-    tvos()
-    macosX64()
+    linuxX64()
+    mingwX64()
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64(),
+        watchosX64(),
+        watchosArm64(),
+        macosX64(),
+        macosArm64(),
+        tvosX64(),
+        tvosArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName = "flywheel"
+        }
+    }
     linuxX64()
     mingwX64()
     sourceSets {
@@ -112,28 +132,58 @@ kotlin {
         val appleTest by creating {
             dependsOn(commonTest)
         }
-        val iosMain by getting {
+        val iosX64Main by getting
+        val iosArm64Main by getting
+        val iosSimulatorArm64Main by getting
+        val iosMain by creating {
+            dependsOn(appleMain)
+            iosX64Main.dependsOn(this)
+            iosArm64Main.dependsOn(this)
+            iosSimulatorArm64Main.dependsOn(this)
+        }
+        val iosX64Test by getting
+        val iosArm64Test by getting
+        val iosSimulatorArm64Test by getting
+        val iosTest by creating {
+            dependsOn(commonTest)
+            iosX64Test.dependsOn(this)
+            iosArm64Test.dependsOn(this)
+            iosSimulatorArm64Test.dependsOn(this)
+        }
+        val watchosX64Main by getting {
             dependsOn(appleMain)
         }
-        val iosTest by getting {
+        val watchosX64Test by getting {
             dependsOn(appleTest)
         }
-        val watchosMain by getting {
+        val watchosArm64Main by getting {
             dependsOn(appleMain)
         }
-        val watchosTest by getting {
-            dependsOn(appleTest)
-        }
-        val tvosMain by getting {
-            dependsOn(appleMain)
-        }
-        val tvosTest by getting {
+        val watchosArm64Test by getting {
             dependsOn(appleTest)
         }
         val macosX64Main by getting {
             dependsOn(appleMain)
         }
         val macosX64Test by getting {
+            dependsOn(appleTest)
+        }
+        val macosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val macosArm64Test by getting {
+            dependsOn(appleTest)
+        }
+        val tvosX64Main by getting {
+            dependsOn(appleMain)
+        }
+        val tvosX64Test by getting {
+            dependsOn(appleTest)
+        }
+        val tvosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val tvosArm64Test by getting {
             dependsOn(appleTest)
         }
         val linuxX64Main by getting {
@@ -159,24 +209,6 @@ android {
         targetSdkVersion(Versions.Android.targetSdk)
     }
 }
-
-//----------------------------------------------------------------------------------
-
-val packForXcode by tasks.creating(Sync::class) {
-    group = "build"
-    val mode = System.getenv("CONFIGURATION") ?: "DEBUG"
-    val sdkName = System.getenv("SDK_NAME") ?: "iphonesimulator"
-    val targetName = "ios" + if (sdkName.startsWith("iphoneos")) "Arm64" else "X64"
-    val framework =
-        kotlin.targets.getByName<KotlinNativeTarget>(targetName).binaries.getFramework(mode)
-    inputs.property("mode", mode)
-    dependsOn(framework.linkTask)
-    val targetDir = File(buildDir, "xcode-frameworks")
-    from({ framework.outputDirectory })
-    into(targetDir)
-}
-
-tasks.getByName("build").dependsOn(packForXcode)
 
 //----------------------------------------------------------------------------------
 
@@ -278,7 +310,9 @@ val buildXcFramework by tasks.registering {
         "watchosX64",
         "tvosArm64",
         "tvosX64",
-        "macosX64")
+        "macosArm64",
+        "macosX64"
+    )
         .map { kotlin.targets.getByName<KotlinNativeTarget>(it).binaries.getFramework(mode) }
     inputs.property("mode", mode)
     dependsOn(frameworks.map { it.linkTask })

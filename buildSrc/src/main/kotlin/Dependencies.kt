@@ -16,17 +16,17 @@
 
 object Versions {
 
-    const val kotlin = "1.5.21"
-    const val coroutines = "1.5.1-native-mt"
-    const val dokka = "1.4.32"
+    const val kotlin = "1.7.20"
+    const val coroutines = "1.6.3-native-mt"
+    const val dokka = "1.7.10"
 
     object Android {
 
-        const val compileSdk = 30
+        const val compileSdk = 33
         const val minSdk = 21
-        const val targetSdk = 29
+        const val targetSdk = 33
         const val buildTools = "30.0.3"
-        const val androidGradlePlugin = "7.0.3"
+        const val androidGradlePlugin = "7.3.1"
 
         const val appCompat = "1.3.0"
         const val core = "1.6.0"
