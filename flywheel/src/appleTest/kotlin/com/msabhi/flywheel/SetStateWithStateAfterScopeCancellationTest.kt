@@ -24,7 +24,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 class SetStateWithStateAfterScopeCancellationTest {
 
     @Test

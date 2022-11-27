@@ -26,7 +26,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 class StateReserveTest : BaseTest() {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->

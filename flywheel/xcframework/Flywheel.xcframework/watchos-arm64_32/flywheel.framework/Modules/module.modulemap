@@ -3,4 +3,6 @@ framework module flywheel {
 
     export *
     module * { export * }
+
+    use Foundation
 }

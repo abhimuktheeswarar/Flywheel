@@ -2,7 +2,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.msabhi/flywheel?style=flat)](https://search.maven.org/search?q=com.msabhi.flywheel)
 [![GitHub License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-1.5.21-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-1.7.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
 ![badge-android](https://img.shields.io/badge/platform-android-3DDC84.svg?style=flat)
 ![badge-jvm](https://img.shields.io/badge/platform-jvm-red.svg?style=flat)
 ![badge-apple](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-lightgrey?style=flat)
@@ -29,7 +29,7 @@ kotlin {
   sourceSets {
       val commonMain by getting {
           dependencies {
-              implementation("com.msabhi:flywheel:1.1.4-RC")
+              implementation("com.msabhi:flywheel:1.1.5-RC")
           }
       }
   }
@@ -41,7 +41,7 @@ kotlin {
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel-android:1.1.4-RC")
+    implementation("com.msabhi:flywheel-android:1.1.5-RC")
 }
 ```
 
@@ -49,17 +49,6 @@ dependencies {
 #### In Apple platforms
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
-
-You can use CocoaPods to install Flywheel by adding it to your `Podfile`:
-```
-use_frameworks!
-
-target 'MyApp' do
-
-    pod 'Flywheel', '~> 1.1.4-RC'
-
-end
-```
 
 You can use the [Swift Package Manager](https://swift.org/package-manager) to install `Flywheel` by adding the proper description to your `Package.swift` file:
 
@@ -70,7 +59,7 @@ import PackageDescription
 let package = Package(
     name: "YOUR_PROJECT_NAME",
     dependencies: [
-        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.4-RC"),
+        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.5-RC"),
     ]
 )
 ```

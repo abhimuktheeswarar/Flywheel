@@ -17,24 +17,26 @@
 package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class TrialTest {
 
     @Test
-    fun flowBehaviourTest() = runBlockingTest {
+    fun flowBehaviourTest() = runTest(UnconfinedTestDispatcher()) {
         val mutableSharedFlow = MutableSharedFlow<Int>(
             replay = 1,
-            onBufferOverflow = BufferOverflow.SUSPEND)
+            onBufferOverflow = BufferOverflow.SUSPEND
+        )
 
         repeat(10) {
             mutableSharedFlow.emit(it)

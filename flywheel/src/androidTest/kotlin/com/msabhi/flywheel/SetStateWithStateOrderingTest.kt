@@ -18,16 +18,14 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.*
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.ConcurrentLinkedQueue
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class SetStateWithStateOrderingTest {
 
     private fun stateReserve(
@@ -56,7 +54,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(TestScope(UnconfinedTestDispatcher()), reduce)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         launch {
             stateReserve.awaitState()
@@ -77,7 +75,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(TestScope(UnconfinedTestDispatcher()), reduce)
         launch {
             stateReserve.awaitState()
             calls += "w1"
@@ -102,7 +100,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(TestScope(UnconfinedTestDispatcher()), reduce)
         launch {
             stateReserve.awaitState()
             calls += "w1"
@@ -135,7 +133,7 @@ class SetStateWithStateOrderingTest {
                 else -> state
             }
         }
-        val stateReserve = stateReserve(TestCoroutineScope(), reduce)
+        val stateReserve = stateReserve(TestScope(UnconfinedTestDispatcher()), reduce)
         launch {
             stateReserve.awaitState()
             calls += "w1"

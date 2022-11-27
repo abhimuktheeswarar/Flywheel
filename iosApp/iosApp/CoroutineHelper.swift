@@ -1,3 +1,11 @@
+//
+//  CoroutineHelper.swift
+//  iosApp
+//
+//  Created by Abhi Muktheeswarar on 27/11/22.
+//  Copyright © 2022 orgName. All rights reserved.
+//
+
 import Combine
 import Foundation
 import flywheel
@@ -84,7 +92,7 @@ class Collector<T>: Kotlinx_coroutines_coreFlowCollector {
     }
 
 
-    func emit(value: Any?, completionHandler: @escaping (KotlinUnit?, Error?) -> Void) {
+    func emit(value: Any?, completionHandler: @escaping (Error?) -> Void) {
         // do whatever you what with the emitted value
         callback(value as! T)
 
@@ -95,6 +103,6 @@ class Collector<T>: Kotlinx_coroutines_coreFlowCollector {
         // i think first parameter can be always nil or KotlinUnit()
         // second parameter is for an error which occurred while consuming the value
         // passing an error object will throw a NSGenericException in kotlin code, which can be handled or your app will crash
-        completionHandler(KotlinUnit(), nil)
+        completionHandler(nil)
     }
 }

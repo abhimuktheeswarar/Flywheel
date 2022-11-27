@@ -23,7 +23,6 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 @RunWith(JUnit4::class)
 actual abstract class BaseTest {
     @get:Rule

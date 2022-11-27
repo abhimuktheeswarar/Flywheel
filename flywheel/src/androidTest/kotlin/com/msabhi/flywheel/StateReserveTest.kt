@@ -18,21 +18,15 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import org.junit.Assert
 import org.junit.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class StateReserveTest {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
@@ -46,7 +40,7 @@ class StateReserveTest {
 
     private fun stateReserve(
         reduce: Reduce<TestCounterState> = this.reduce,
-        scope: CoroutineScope = TestCoroutineScope(TestCoroutineDispatcher()),
+        scope: CoroutineScope = TestScope(UnconfinedTestDispatcher()),
     ): StateReserve<TestCounterState> {
         val config =
             StateReserveConfig(
@@ -59,7 +53,7 @@ class StateReserveTest {
     }
 
     @Test
-    fun testGetRunsSynchronouslyForTests() = runBlockingTest {
+    fun testGetRunsSynchronouslyForTests() = runTest(UnconfinedTestDispatcher()) {
         var callCount = 0
         val reduce: Reduce<TestCounterState> = { action, state ->
             callCount++
@@ -85,7 +79,7 @@ class StateReserveTest {
 
 
     @Test
-    fun testSubscribeNotCalledForSameValue() = runBlockingTest {
+    fun testSubscribeNotCalledForSameValue() = runTest(UnconfinedTestDispatcher()) {
         val stateReserve = stateReserve()
         var callCount = 0
         val job = stateReserve.states.onEach {
@@ -98,7 +92,7 @@ class StateReserveTest {
     }
 
     @Test
-    fun testBlockingReceiver() = runBlockingTest {
+    fun testBlockingReceiver() = runTest(UnconfinedTestDispatcher()) {
         val stateReserve = stateReserve()
         val values = mutableListOf<Int>()
         val job = launch {

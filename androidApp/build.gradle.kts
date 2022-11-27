@@ -12,13 +12,13 @@ version = VERSION_NAME
 
 android {
 
-    compileSdkVersion(Versions.Android.compileSdk)
+    compileSdk = Versions.Android.compileSdk
     buildToolsVersion = Versions.Android.buildTools
 
     defaultConfig {
 
-        minSdkVersion(Versions.Android.minSdk)
-        targetSdkVersion(Versions.Android.targetSdk)
+        minSdk = Versions.Android.minSdk
+        targetSdk = Versions.Android.targetSdk
 
         applicationId = "com.msabhi.androidApp"
         versionCode = 1

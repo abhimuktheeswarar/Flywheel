@@ -21,8 +21,8 @@ import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -30,7 +30,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 class CounterComparisonTest {
 
     @Volatile
@@ -42,10 +42,11 @@ class CounterComparisonTest {
     }
 
     @Test
-    fun flowBehaviourTest() = runBlockingTest {
+    fun flowBehaviourTest() = runTest(UnconfinedTestDispatcher()) {
         val mutableSharedFlow = MutableSharedFlow<Int>(
             replay = 1,
-            onBufferOverflow = BufferOverflow.SUSPEND)
+            onBufferOverflow = BufferOverflow.SUSPEND
+        )
 
         repeat(10) {
             mutableSharedFlow.emit(it)
@@ -76,8 +77,12 @@ class CounterComparisonTest {
     @Test
     fun failingCounterTest() = runBlocking {
 
-        val scope = CoroutineScope(newFixedThreadPoolContext(4,
-            "synchronizationPool") + SupervisorJob()) // We want our code to run on 4 threads
+        val scope = CoroutineScope(
+            newFixedThreadPoolContext(
+                4,
+                "synchronizationPool"
+            ) + SupervisorJob()
+        ) // We want our code to run on 4 threads
         scope.launch {
             val coroutines = 1.rangeTo(1000).map { //create 1000 coroutines (light-weight threads).
                 launch {
@@ -100,12 +105,17 @@ class CounterComparisonTest {
 
     @Test
     fun workingCounterTest() = runBlocking {
-        val scope = CoroutineScope(newFixedThreadPoolContext(4,
-            "synchronizationPool") + SupervisorJob()) // We want our code to run on 4 threads
+        val scope = CoroutineScope(
+            newFixedThreadPoolContext(
+                4,
+                "synchronizationPool"
+            ) + SupervisorJob()
+        ) // We want our code to run on 4 threads
         val config =
             StateReserveConfig(
                 scope = scope,
-                debugMode = false)
+                debugMode = false
+            )
 
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -120,7 +130,8 @@ class CounterComparisonTest {
             initialState = InitialState.set(TestCounterState(0)),
             reduce = reduce,
             config = config,
-            middlewares = null)
+            middlewares = null
+        )
 
 
         val j0 = scope.launch {
