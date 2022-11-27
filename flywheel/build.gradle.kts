@@ -310,7 +310,6 @@ val buildXcFramework by tasks.registering {
         "watchosX64",
         "tvosArm64",
         "tvosX64",
-        "macosArm64",
         "macosX64"
     )
         .map { kotlin.targets.getByName<KotlinNativeTarget>(it).binaries.getFramework(mode) }
