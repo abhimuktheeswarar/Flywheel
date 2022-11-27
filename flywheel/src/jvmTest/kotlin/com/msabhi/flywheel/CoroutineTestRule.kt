@@ -18,6 +18,7 @@ package com.msabhi.flywheel
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -30,17 +31,17 @@ import java.util.concurrent.Executors
  * we can block the current thread and still dispatch main coroutines
  */
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class CoroutineTestRule(
     private val testDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor()
         .asCoroutineDispatcher(),
 ) : TestWatcher() {
-    override fun starting(description: Description?) {
+    override fun starting(description: Description) {
         super.starting(description)
         Dispatchers.setMain(testDispatcher)
     }
 
-    override fun finished(description: Description?) {
+    override fun finished(description: Description) {
         super.finished(description)
         Dispatchers.resetMain()
     }

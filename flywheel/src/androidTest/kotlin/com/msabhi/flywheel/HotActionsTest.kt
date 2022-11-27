@@ -18,14 +18,13 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import org.junit.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class HotActionsTest {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
@@ -96,8 +95,9 @@ class HotActionsTest {
     private fun stateReserve(): StateReserve<TestCounterState> {
         val config =
             StateReserveConfig(
-                scope = TestCoroutineScope(),
-                debugMode = false)
+                scope = TestScope(UnconfinedTestDispatcher()),
+                debugMode = false
+            )
         return StateReserve(initialState = InitialState.set(TestCounterState(count = 0)),
             reduce = reduce,
             config = config,
@@ -110,7 +110,7 @@ class HotActionsTest {
     object SkipAction : SkipReducer
 
     @Test
-    fun testHotActionsOrder() = runBlockingTest {
+    fun testHotActionsOrder() = runTest(UnconfinedTestDispatcher()) {
         val stateReserve = stateReserve()
         val expectedActions = listOf(
             TestCounterAction.IncrementAction,
@@ -119,7 +119,8 @@ class HotActionsTest {
             TestCounterAction.ForceUpdateAction(4),
             TestCounterAction.DecrementAction,
             TestCounterAction.IncrementAction,
-            SkipAction)
+            SkipAction
+        )
         val actions = arrayListOf<Action>()
         val job = launch {
             stateReserve.actions.collect {
@@ -141,14 +142,15 @@ class HotActionsTest {
     }
 
     @Test
-    fun repeatSameActions() = runBlockingTest {
+    fun repeatSameActions() = runTest(UnconfinedTestDispatcher()) {
         val stateReserve = stateReserve()
         val expectedActions = listOf(
             TestCounterAction.IncrementAction,
             TestCounterAction.IncrementAction,
             TestCounterAction.IncrementAction,
             TestCounterAction.IncrementAction,
-            TestCounterAction.IncrementAction)
+            TestCounterAction.IncrementAction
+        )
         val actions = arrayListOf<Action>()
         val job = launch {
             stateReserve.actions.collect {

@@ -17,14 +17,12 @@
 package com.msabhi.flywheel
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class StateMachineTest {
 
     internal sealed class MaterialState : State {
@@ -85,21 +83,25 @@ class StateMachineTest {
         middlewares: List<Middleware<S>>? = null,
     ): StateReserve<S> {
         val config =
-            StateReserveConfig(scope = scope,
+            StateReserveConfig(
+                scope = scope,
                 debugMode = debugMode,
-                enhancedStateMachine = true)
+                enhancedStateMachine = true
+            )
 
         return StateReserve(config, InitialState.set(initialState), reduce, middlewares)
     }
 
     @Test
-    fun materialStateMachineTest(): Unit = runBlockingTest {
-        val scope = TestCoroutineScope(SupervisorJob())
+    fun materialStateMachineTest(): Unit = runTest(UnconfinedTestDispatcher()) {
+        val scope = TestScope(SupervisorJob() + UnconfinedTestDispatcher())
         val stateReserve =
-            getStateReserve(scope = scope,
+            getStateReserve(
+                scope = scope,
                 initialState = MaterialState.Solid,
                 debugMode = false,
-                reduce = materialReducer)
+                reduce = materialReducer
+            )
 
         var simpleValidTransitions = 0
         var validTransitions = 0
@@ -172,13 +174,15 @@ class StateMachineTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun stateMutabilityTest(): Unit = runBlockingTest {
-        val scope = TestCoroutineScope(SupervisorJob())
+    fun stateMutabilityTest(): Unit = runTest(UnconfinedTestDispatcher()) {
+        val scope = TestScope(SupervisorJob() + UnconfinedTestDispatcher())
         val stateReserve =
-            getStateReserve(scope = scope,
+            getStateReserve(
+                scope = scope,
                 initialState = MaterialState.Quantum(mutableMapOf(1 to MaterialState.Solid)),
                 debugMode = true,
-                reduce = materialReducer)
+                reduce = materialReducer
+            )
 
         assertIs<MaterialState.Quantum>(stateReserve.awaitState())
         stateReserve.dispatch(MaterialAction.OnQuantum(1, MaterialState.Liquid))
@@ -187,13 +191,15 @@ class StateMachineTest {
     }
 
     @Test
-    fun invalidActionForStateTest(): Unit = runBlockingTest {
-        val scope = TestCoroutineScope(SupervisorJob())
+    fun invalidActionForStateTest(): Unit = runTest(UnconfinedTestDispatcher()) {
+        val scope = TestScope(SupervisorJob() + UnconfinedTestDispatcher())
         val stateReserve =
-            getStateReserve(scope = scope,
+            getStateReserve(
+                scope = scope,
                 initialState = MaterialState.Solid,
                 debugMode = false,
-                reduce = materialReducer)
+                reduce = materialReducer
+            )
 
         var inValidTransitions = 0
 

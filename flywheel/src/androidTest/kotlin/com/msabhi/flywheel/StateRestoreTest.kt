@@ -19,16 +19,15 @@ package com.msabhi.flywheel
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class StateRestoreTest {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
@@ -55,24 +54,28 @@ class StateRestoreTest {
     }
 
     @Test
-    fun testStateReserveWithInitialStateSet() = runBlockingTest {
+    fun testStateReserveWithInitialStateSet() = runTest(UnconfinedTestDispatcher()) {
 
         val stateReserve =
-            stateReserve(TestCoroutineScope(), InitialState.set(TestCounterState(1)))
+            stateReserve(
+                TestScope(UnconfinedTestDispatcher()),
+                InitialState.set(TestCounterState(1))
+            )
 
         stateReserve.dispatch(TestCounterAction.IncrementAction)
         assertEquals(2, stateReserve.awaitState().count)
 
         assertNotNull(runCatching {
             stateReserve.restoreState(
-                TestCounterState())
+                TestCounterState()
+            )
         }.exceptionOrNull())
     }
 
     @Test
-    fun testStateReserveWithDeferredState() = runBlockingTest {
+    fun testStateReserveWithDeferredState() = runTest(UnconfinedTestDispatcher()) {
 
-        val scope = TestCoroutineScope()
+        val scope = TestScope(UnconfinedTestDispatcher())
         val stateReserve = stateReserve(scope, InitialState.deferredSet())
 
         var actionsCount = 0
