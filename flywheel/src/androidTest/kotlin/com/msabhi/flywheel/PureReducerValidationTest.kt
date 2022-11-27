@@ -18,13 +18,14 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class PureReducerValidationTest {
 
     @get:Rule
@@ -37,8 +38,9 @@ class PureReducerValidationTest {
     ): StateReserve<S> {
         val config =
             StateReserveConfig(
-                scope = TestCoroutineScope(TestCoroutineDispatcher()),
-                debugMode = true)
+                scope = TestScope(UnconfinedTestDispatcher()),
+                debugMode = true
+            )
         return StateReserve(
             initialState = initialState,
             reduce = reduce,

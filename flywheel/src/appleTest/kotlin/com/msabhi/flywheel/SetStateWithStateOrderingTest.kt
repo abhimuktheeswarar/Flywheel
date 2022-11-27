@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 class SetStateWithStateOrderingTest : BaseTest() {
 
     private fun stateReserve(

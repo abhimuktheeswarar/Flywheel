@@ -22,15 +22,14 @@ import com.msabhi.flywheel.attachments.SideEffect
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import org.junit.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class SideEffectTest {
 
     internal companion object {
@@ -77,9 +76,9 @@ class SideEffectTest {
     }
 
     @Test(timeout = 15000)
-    fun loadTest() = runBlockingTest {
+    fun loadTest() = runTest(UnconfinedTestDispatcher()) {
 
-        val scope = TestCoroutineScope()
+        val scope = TestScope(UnconfinedTestDispatcher())
         val stateReserve = stateReserve(scope)
 
         val sideEffects = mutableSetOf<CounterSideEffect>()
@@ -103,7 +102,7 @@ class SideEffectTest {
         }
 
         repeat(N) {
-            scope.advanceTimeBy(N.toLong())
+            scope.testScheduler.apply { advanceTimeBy(N.toLong()); runCurrent() }
         }
 
         assertEquals(N, stateReserve.awaitState().count)

@@ -18,12 +18,10 @@ package com.msabhi.flywheel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.*
 import org.junit.Test
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class MutableStateValidationTest {
 
     internal data class StateWithMutableMap(val map: MutableMap<String, String> = mutableMapOf()) :
@@ -34,7 +32,7 @@ class MutableStateValidationTest {
     internal data class UpdateDataAction(val item: Pair<String, String>) : Action
 
     private fun <S : State> getStateReserve(
-        scope: CoroutineScope = TestCoroutineScope(TestCoroutineDispatcher()),
+        scope: CoroutineScope = TestScope(UnconfinedTestDispatcher()),
         initialState: S,
         reduce: Reduce<S>,
     ): StateReserve<S> {
@@ -48,7 +46,7 @@ class MutableStateValidationTest {
 
     @ExperimentalCoroutinesApi
     @Test(expected = IllegalArgumentException::class)
-    fun mutableStateShouldFail() = runBlockingTest {
+    fun mutableStateShouldFail() = runTest(UnconfinedTestDispatcher()) {
         val initialState = StateWithMutableMap(map = mutableMapOf("1" to "one"))
         val reduce: Reduce<StateWithMutableMap> =
             { action, state ->

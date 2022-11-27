@@ -61,7 +61,7 @@ class CounterViewModel : ObservableObject {
         stateReserveHolder.states.collect(collector: Collector<CounterState> { counterState in
             self.state = counterState
             
-        }) { (unit, error) in
+        }) { (error) in
             // code which is executed if the Flow object completed
         }
         
@@ -71,7 +71,7 @@ class CounterViewModel : ObservableObject {
                 self.dispatch(action: CounterResetAction())
             }
             
-        }) { (unit, error) in
+        }) { (error) in
             
         }
         
@@ -118,7 +118,7 @@ class CounterSideEffect: SideEffect<CounterState> {
         stateReserve.actionStates.collect(collector: Collector<ActionStateAlways<Action,CounterState>> { actionState in
             self.handle(action: actionState.action, state: actionState.state)
             
-        }) { (unit, error) in
+        }) { (error) in
             // code which is executed if the Flow object completed
         }
         

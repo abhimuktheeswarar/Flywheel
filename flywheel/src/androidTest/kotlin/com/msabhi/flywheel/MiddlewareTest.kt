@@ -18,12 +18,14 @@ package com.msabhi.flywheel
 
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
 import kotlin.test.assertEquals
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 class MiddlewareTest {
 
     private val reduce: Reduce<TestCounterState> = { action, state ->
@@ -69,8 +71,9 @@ class MiddlewareTest {
     private fun stateReserve(): StateReserve<TestCounterState> {
         val config =
             StateReserveConfig(
-                scope = TestCoroutineScope(),
-                debugMode = false)
+                scope = TestScope(UnconfinedTestDispatcher()),
+                debugMode = false
+            )
         return StateReserve(initialState = InitialState.set(TestCounterState(1)),
             reduce = reduce,
             config = config,
