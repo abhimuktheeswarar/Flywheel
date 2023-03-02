@@ -17,6 +17,9 @@
             android:name=".counter.ui.CounterActivity"
             android:label="Counter" />
         <activity
+            android:name=".counter.ui.SimpleCounterActivity"
+            android:label="Simple Counter" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
