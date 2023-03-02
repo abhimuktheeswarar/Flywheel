@@ -42,6 +42,7 @@ class SimpleCounterViewModel(initialState: CounterState) :
 
     companion object {
 
+
         fun get(context: Context): SimpleCounterViewModel {
             val initialState = InitialState.set(CounterState())
             return SimpleCounterViewModel(initialState = initialState.state!!)
