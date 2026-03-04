@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-@file:Suppress("PropertyName")
-
 package com.msabhi.flywheel.attachments
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
-interface DispatcherProvider {
+actual object DispatcherProviderImpl : DispatcherProvider {
 
-    val Main: CoroutineDispatcher
-    val IO: CoroutineDispatcher
-    val Default: CoroutineDispatcher
-    val Unconfined: CoroutineDispatcher
-}
-
-expect object DispatcherProviderImpl : DispatcherProvider {
-    override val Main: CoroutineDispatcher
-    override val IO: CoroutineDispatcher
-    override val Default: CoroutineDispatcher
-    override val Unconfined: CoroutineDispatcher
+    actual override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
+    actual override val IO: CoroutineDispatcher by lazy { Dispatchers.IO }
+    actual override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
+    actual override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
 }

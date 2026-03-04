@@ -21,8 +21,8 @@ import kotlinx.coroutines.Dispatchers
 
 actual object DispatcherProviderImpl : DispatcherProvider {
 
-    override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
-    override val IO: CoroutineDispatcher by lazy { Dispatchers.Default }
-    override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
-    override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
+    actual override val Main: CoroutineDispatcher by lazy { Dispatchers.Main }
+    actual override val IO: CoroutineDispatcher by lazy { Dispatchers.Default }
+    actual override val Default: CoroutineDispatcher by lazy { Dispatchers.Default }
+    actual override val Unconfined: CoroutineDispatcher by lazy { Dispatchers.Unconfined }
 }

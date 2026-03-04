@@ -1,10 +1,12 @@
-import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import java.util.Properties
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
-    kotlin("multiplatform")
-    id("com.android.library")
-    id("org.jetbrains.dokka") version Versions.dokka
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.dokka)
     id("maven-publish")
     id("signing")
 }
@@ -25,206 +27,158 @@ val POM_LICENCE_URL: String by project
 val POM_LICENCE_DIST: String by project
 val POM_DEVELOPER_ID: String by project
 val POM_DEVELOPER_NAME: String by project
-val POM_DEVELOPER_EMAIL: String = gradleLocalProperties(
-    rootDir
-).getProperty(
-    "POM_DEVELOPER_EMAIL",
-    System.getenv("POM_DEVELOPER_EMAIL")
-)
 
-val SONATYPE_USERNAME: String = gradleLocalProperties(
-    rootDir
-).getProperty(
-    "SONATYPE_USERNAME",
-    System.getenv("SONATYPE_USERNAME")
-)
+fun localProperty(key: String): String? {
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    return localProperties.getProperty(key) ?: System.getenv(key)
+}
 
-val SONATYPE_PASSWORD: String = gradleLocalProperties(
-    rootDir
-).getProperty(
-    "SONATYPE_PASSWORD",
-    System.getenv("SONATYPE_PASSWORD")
-)
+val POM_DEVELOPER_EMAIL: String = localProperty("POM_DEVELOPER_EMAIL") ?: ""
+val SONATYPE_USERNAME: String = localProperty("SONATYPE_USERNAME") ?: ""
+val SONATYPE_PASSWORD: String = localProperty("SONATYPE_PASSWORD") ?: ""
 
 group = GROUP
 version = VERSION_NAME
+
+val xcf = XCFramework("Flywheel")
+
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "11"
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnit()
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmAndAndroid") {
+                withJvm()
+                withAndroidTarget()
+            }
+            group("linuxMingw") {
+                withLinuxX64()
+                withMingwX64()
+            }
         }
     }
-    android {
+
+    @Suppress("DEPRECATION")
+    androidTarget {
         publishAllLibraryVariants()
         publishLibraryVariantsGroupedByFlavor = true
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
-    js(BOTH) {
+
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+        testRuns.configureEach {
+            executionTask.configure {
+                useJUnit()
+            }
+        }
+    }
+
+    js {
         browser()
         nodejs()
     }
+
     linuxX64()
     mingwX64()
+
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName = "flywheel"
+            isStatic = true
+            xcf.add(this)
+        }
+    }
+
+    listOf(
         watchosX64(),
         watchosArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName = "flywheel"
+            isStatic = true
+            xcf.add(this)
+        }
+    }
+
+    listOf(
         macosX64(),
         macosArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName = "flywheel"
+            isStatic = true
+            xcf.add(this)
+        }
+    }
+
+    listOf(
         tvosX64(),
         tvosArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "flywheel"
+            isStatic = true
+            xcf.add(this)
         }
     }
-    linuxX64()
-    mingwX64()
+
     sourceSets {
-        val commonMain by getting {
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        val jvmAndAndroidTest by getting {
             dependencies {
-                implementation(Dependencies.Coroutines.common)
+                implementation(libs.kotlin.test.junit)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
-        val commonTest by getting {
+        val androidUnitTest by getting {
             dependencies {
-                implementation(Dependencies.KotlinTest.common)
-                implementation(Dependencies.KotlinTest.annotations)
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.testExt.junit)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.rules)
             }
-        }
-        val jvmMain by getting
-        val jvmTest by getting {
-            dependencies {
-                implementation(Dependencies.KotlinTest.jvm)
-                implementation(Dependencies.KotlinTest.junit)
-                implementation(Dependencies.Coroutines.test)
-                implementation(Dependencies.AndroidTest.core)
-                implementation(Dependencies.AndroidTest.junit)
-                implementation(Dependencies.AndroidTest.runner)
-                implementation(Dependencies.AndroidTest.rules)
-            }
-        }
-        val androidMain by getting {
-            dependsOn(jvmMain)
-        }
-        val androidTest by getting {
-            dependsOn(jvmTest)
-        }
-        val jsMain by getting
-        val jsTest by getting {
-            dependencies {
-                implementation(Dependencies.KotlinTest.js)
-            }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        val nativeTest by creating {
-            dependsOn(commonTest)
-        }
-        val appleMain by creating {
-            dependsOn(commonMain)
-        }
-        val appleTest by creating {
-            dependsOn(commonTest)
-        }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by creating {
-            dependsOn(appleMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
-        }
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting
-        val iosTest by creating {
-            dependsOn(commonTest)
-            iosX64Test.dependsOn(this)
-            iosArm64Test.dependsOn(this)
-            iosSimulatorArm64Test.dependsOn(this)
-        }
-        val watchosX64Main by getting {
-            dependsOn(appleMain)
-        }
-        val watchosX64Test by getting {
-            dependsOn(appleTest)
-        }
-        val watchosArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val watchosArm64Test by getting {
-            dependsOn(appleTest)
-        }
-        val macosX64Main by getting {
-            dependsOn(appleMain)
-        }
-        val macosX64Test by getting {
-            dependsOn(appleTest)
-        }
-        val macosArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val macosArm64Test by getting {
-            dependsOn(appleTest)
-        }
-        val tvosX64Main by getting {
-            dependsOn(appleMain)
-        }
-        val tvosX64Test by getting {
-            dependsOn(appleTest)
-        }
-        val tvosArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val tvosArm64Test by getting {
-            dependsOn(appleTest)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val linuxX64Test by getting {
-            dependsOn(nativeTest)
-        }
-        val mingwX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val mingwX64Test by getting {
-            dependsOn(nativeTest)
         }
     }
 }
 
 android {
-    compileSdkVersion(Versions.Android.compileSdk)
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    namespace = "com.msabhi.flywheel"
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
-        minSdkVersion(Versions.Android.minSdk)
-        targetSdkVersion(Versions.Android.targetSdk)
+        minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
 //----------------------------------------------------------------------------------
 
-val dokkaOutputDir = "$buildDir/docs"
-
-tasks.dokkaHtml.configure {
-    outputDirectory.set(file(dokkaOutputDir))
-}
-
-val deleteDokkaOutputDir by tasks.register<Delete>("deleteDokkaOutputDirectory") {
-    delete(dokkaOutputDir)
-}
 val javadocJar = tasks.register<Jar>("javadocJar") {
-    dependsOn(deleteDokkaOutputDir, tasks.dokkaHtml)
     archiveClassifier.set("javadoc")
-    from(dokkaOutputDir)
+    from(tasks.named("dokkaGenerateModuleHtml").map { it.outputs })
 }
 
 publishing {
@@ -283,54 +237,8 @@ publishing {
 }
 
 signing {
-    val localProps = gradleLocalProperties(rootDir)
-    val signingKey = localProps.getProperty("SIGNING_KEY", System.getenv("SIGNING_KEY"))
-    val signingPassword = localProps.getProperty(
-        "SIGNING_PASSWORD",
-        System.getenv("SIGNING_PASSWORD")
-    )
+    val signingKey = localProperty("SIGNING_KEY")
+    val signingPassword = localProperty("SIGNING_PASSWORD")
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign(publishing.publications)
-}
-
-//----------------------------------------------------------------------------------
-
-val xcFrameworkPath = "xcframework/Flywheel.xcframework"
-
-tasks.create<Delete>("deleteXcFramework") { delete = setOf(xcFrameworkPath) }
-
-val buildXcFramework by tasks.registering {
-    dependsOn("deleteXcFramework")
-    group = "build"
-    val mode = "Release"
-    val frameworks = arrayOf(
-        "iosArm64",
-        "iosX64",
-        "watchosArm64",
-        "watchosX64",
-        "tvosArm64",
-        "tvosX64",
-        "macosX64"
-    )
-        .map { kotlin.targets.getByName<KotlinNativeTarget>(it).binaries.getFramework(mode) }
-    inputs.property("mode", mode)
-    dependsOn(frameworks.map { it.linkTask })
-    doLast { buildXcFramework(frameworks) }
-}
-
-fun Task.buildXcFramework(frameworks: List<org.jetbrains.kotlin.gradle.plugin.mpp.Framework>) {
-    val buildArgs: () -> List<String> = {
-        val arguments = mutableListOf("-create-xcframework")
-        frameworks.forEach {
-            arguments += "-framework"
-            arguments += "${it.outputDirectory}/${project.name}.framework"
-        }
-        arguments += "-output"
-        arguments += xcFrameworkPath
-        arguments
-    }
-    exec {
-        executable = "xcodebuild"
-        args = buildArgs()
-    }
 }

@@ -17,6 +17,7 @@
 package com.msabhi.androidApp.base
 
 import androidx.lifecycle.ViewModel
+import com.msabhi.androidApp.BuildConfig
 import com.msabhi.androidApp.utilities.assertImmutability
 import com.msabhi.flywheel.*
 import com.msabhi.flywheel.utilities.getDefaultScope

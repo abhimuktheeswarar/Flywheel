@@ -16,6 +16,7 @@
 
 package com.msabhi.flywheel.base
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ import platform.CoreFoundation.CFRunLoopGetCurrent
 import platform.CoreFoundation.CFRunLoopRun
 import platform.CoreFoundation.CFRunLoopStop
 
+@OptIn(ExperimentalForeignApi::class)
 actual abstract class BaseTest {
 
     actual fun <T> runTest(block: suspend CoroutineScope.() -> T) {

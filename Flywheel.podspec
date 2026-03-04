@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'Flywheel'
-    spec.version                  = '1.1.4-RC'
+    spec.version                  = '1.1.5-RC'
     spec.homepage                 = 'https://github.com/abhimuktheeswarar/Flywheel'
     spec.source                   = { :git => "https://github.com/abhimuktheeswarar/Flywheel.git", :tag => "v#{spec.version}" }
     spec.authors                  = 'Abhi Muktheeswarar'
@@ -10,6 +10,6 @@ Pod::Spec.new do |spec|
     spec.vendored_frameworks      = "flywheel/xcframework/Flywheel.xcframework"
     spec.libraries                = "c++"
     spec.module_name              = "#{spec.name}_umbrella"
-    spec.platforms           	  = { :ios => '11', :watchos => '4', :tvos => '11', :osx => '10.13' }
-    spec.pod_target_xcconfig 	  = { 'ONLY_ACTIVE_ARCH' => 'YES' }
+    spec.platforms                = { :ios => '16.0', :watchos => '7.0', :tvos => '16.0', :osx => '13.0' }
+    spec.pod_target_xcconfig      = { 'ONLY_ACTIVE_ARCH' => 'YES' }
 end
