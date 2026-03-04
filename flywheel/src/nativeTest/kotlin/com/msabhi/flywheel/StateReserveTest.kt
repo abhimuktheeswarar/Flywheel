@@ -22,6 +22,7 @@ import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -53,17 +54,15 @@ class StateReserveTest : BaseTest() {
 
     @Test
     fun testGetRunsSynchronouslyForTests() = runTest {
-        println("start")
         var callCount = 0
         val reduce: Reduce<TestCounterState> = { _, state ->
-
             callCount++
             state
         }
         val stateReserve = stateReserve(reduce, this)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
+        yield() // ensure consumeEach processes the action before awaitState
         stateReserve.awaitState()
-        println("end")
         assertEquals(1, callCount)
     }
 
@@ -77,6 +76,7 @@ class StateReserveTest : BaseTest() {
         }
         val stateReserve = stateReserve(reduce, this)
         stateReserve.dispatch(TestCounterAction.ForceUpdateAction(2))
+        yield() // ensure consumeEach processes the action before awaitState
         stateReserve.awaitState()
         assertTrue(called)
     }

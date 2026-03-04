@@ -17,11 +17,23 @@
 package com.msabhi.flywheel.base
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 
 actual abstract class BaseTest {
 
     actual fun <T> runTest(block: suspend CoroutineScope.() -> T) {
-        runBlocking { block() }
+        runBlocking {
+            // Use a child scope so the state machine can be cancelled when the test is done,
+            // allowing runBlocking to complete without hanging.
+            val childJob = SupervisorJob()
+            val childScope = CoroutineScope(coroutineContext + childJob)
+            try {
+                block(childScope)
+            } finally {
+                childJob.cancelAndJoin()
+            }
+        }
     }
 }

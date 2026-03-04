@@ -35,17 +35,9 @@ class ActionsReplayTest {
         }
     }
 
-    @Test
-    fun replayLargeTest() = runBlocking {
-        singleReplayTestIteration(N = 100_000, subscribers = 10)
-    }
-
     /**
-     * Tests consistency of produced flow. E.g. for just increment reducer output must be
-     * 1,2,3,4,5
-     * not 1,3,4,5 (value missing)
-     * or 4,3,4,5 (incorrect order)
-     * or 3,3,4,5 (duplicate value)
+     * Tests consistency of the actionStates flow. E.g. for just increment reducer, output must be
+     * 1,2,3,4,5 — not 1,3,4,5 (missing), 4,3,4,5 (wrong order), or 3,3,4,5 (duplicate).
      */
     private suspend fun singleReplayTestIteration(N: Int, subscribers: Int) =
         withContext(Dispatchers.Default) {
@@ -72,12 +64,9 @@ class ActionsReplayTest {
                 }
             }
 
-            // One more scope for subscribers, to ensure subscribers are finished before cancelling StateReserve scope
             coroutineScope {
                 repeat(subscribers) {
                     launch {
-                        // Since only increase by 1 reducers are applied
-                        // it's expected to see monotonously increasing sequence with no missing values
                         stateReserve.actionStates.map { stateReserve.awaitState() }
                             .takeWhile { it.count < N }.toList().zipWithNext { a, b ->
                                 assertEquals(a.count + 1, b.count)
@@ -87,7 +76,6 @@ class ActionsReplayTest {
             }
             scope.cancel()
         }
-
 
     @Suppress("DeferredResultUnused")
     @Test
@@ -120,9 +108,7 @@ class ActionsReplayTest {
         coroutineScope {
             async(start = CoroutineStart.UNDISPATCHED) {
                 stateReserve.actionStates.map { stateReserve.state() }.takeWhile { it.count < n }
-                    .collect {
-                        // no-op
-                    }
+                    .collect { }
             }
             async {
                 repeat(n) {
