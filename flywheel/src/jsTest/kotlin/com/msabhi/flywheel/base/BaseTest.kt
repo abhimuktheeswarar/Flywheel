@@ -17,10 +17,11 @@
 package com.msabhi.flywheel.base
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.runTest
 
 actual abstract class BaseTest {
 
     actual fun <T> runTest(block: suspend CoroutineScope.() -> T) {
-        throw UnsupportedOperationException()
+        runTest { block() }
     }
 }

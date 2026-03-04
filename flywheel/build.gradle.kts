@@ -144,11 +144,11 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
         val jvmAndAndroidTest by getting {
             dependencies {
                 implementation(libs.kotlin.test.junit)
-                implementation(libs.kotlinx.coroutines.test)
             }
         }
         val androidUnitTest by getting {

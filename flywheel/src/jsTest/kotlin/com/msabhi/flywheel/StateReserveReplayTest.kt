@@ -1,0 +1,120 @@
+/*
+ * Copyright (C) 2021 Abhi Muktheeswarar
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.msabhi.flywheel
+
+import com.msabhi.flywheel.common.TestCounterAction
+import com.msabhi.flywheel.common.TestCounterState
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class StateReserveReplayTest {
+
+    @Test
+    fun replayTest() = runTest {
+        singleReplayTestIteration(N = 200, subscribers = 1)
+    }
+
+    /**
+     * Tests consistency of produced flow. E.g. for just increment reducer output must be
+     * 1,2,3,4,5
+     * not 1,3,4,5 (value missing)
+     * or 4,3,4,5 (incorrect order)
+     * or 3,3,4,5 (duplicate value)
+     */
+    private suspend fun singleReplayTestIteration(N: Int, subscribers: Int) =
+        withContext(Dispatchers.Default) {
+            val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+            val reduce: Reduce<TestCounterState> = { action, state ->
+                when (action) {
+                    is TestCounterAction.IncrementAction -> state.copy(count = state.count + 1)
+                    else -> state
+                }
+            }
+            val config =
+                StateReserveConfig(
+                    scope = scope,
+                    debugMode = false)
+            val stateReserve =
+                StateReserve(initialState = InitialState.set(TestCounterState()),
+                    reduce = reduce,
+                    config = config,
+                    middlewares = null)
+
+            launch {
+                repeat(N) {
+                    stateReserve.dispatch(TestCounterAction.IncrementAction)
+                }
+            }
+
+            coroutineScope {
+                repeat(subscribers) {
+                    launch {
+                        stateReserve.states.takeWhile { it.count < N }.toList()
+                            .zipWithNext { a, b ->
+                                assertEquals(a.count + 1, b.count)
+                            }
+                    }
+                }
+            }
+            scope.cancel()
+        }
+
+    @Test
+    fun testProperCancellation() = runTest {
+        val scope = CoroutineScope(Dispatchers.Default + Job())
+        val reduce: Reduce<TestCounterState> = { action, state ->
+            when (action) {
+                is TestCounterAction.IncrementAction -> state.copy(count = state.count + 1)
+                else -> state
+            }
+        }
+        val config =
+            StateReserveConfig(
+                scope = scope,
+                debugMode = false)
+        val stateReserve =
+            StateReserve(initialState = InitialState.set(TestCounterState()),
+                reduce = reduce,
+                config = config,
+                middlewares = null)
+
+        val collectJob = async(start = CoroutineStart.UNDISPATCHED) {
+            stateReserve.states.collect {
+                delay(Long.MAX_VALUE)
+            }
+        }
+        collectJob.cancel()
+
+        val N = 200
+        coroutineScope {
+            async(start = CoroutineStart.UNDISPATCHED) {
+                stateReserve.states.takeWhile { it.count < N }.collect { }
+            }
+            async {
+                repeat(N) {
+                    stateReserve.dispatch(TestCounterAction.IncrementAction)
+                }
+            }
+        }
+        scope.cancel()
+    }
+}
