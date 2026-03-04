@@ -34,3 +34,4 @@ plugins {
 include(":flywheel")
 include(":androidApp")
 include(":jsApp")
+include(":nativeApp")
