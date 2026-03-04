@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flywheel JS Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6750A4;
+            --primary-dark: #4F378B;
+            --primary-container: #EADDFF;
+            --on-primary: #FFFFFF;
+            --on-primary-container: #21005D;
+            --surface: #FFFBFE;
+            --surface-container: #F3EDF7;
+            --surface-container-high: #ECE6F0;
+            --on-surface: #1C1B1F;
+            --on-surface-variant: #49454F;
+            --outline: #79747E;
+            --outline-variant: #CAC4D0;
+            --shadow: rgba(0, 0, 0, 0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 28px;
+            --radius-full: 50px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--surface);
+            color: var(--on-surface);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── Notification Toast ─────────────────────────────── */
+        .toast {
+            position: fixed;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #322F35;
+            color: #E6E1E5;
+            padding: 12px 24px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px var(--shadow);
+            max-width: 90vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .toast.visible {
+            top: 16px;
+        }
+
+        /* ─── Screens ─────────────────────────────────────────── */
+        .screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen.hidden {
+            display: none;
+        }
+
+        /* ─── Home Screen ─────────────────────────────────────── */
+        #home-screen {
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: linear-gradient(160deg, #F3EDF7 0%, #FFFBFE 60%);
+        }
+
+        .home-card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: 48px 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 8px var(--shadow), 0 8px 32px rgba(103, 80, 164, 0.08);
+        }
+
+        .app-logo {
+            width: 72px;
+            height: 72px;
+            background: var(--primary-container);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 36px;
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--on-surface);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-container);
+            color: var(--on-primary-container);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            margin-bottom: 32px;
+        }
+
+        .examples-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--on-surface-variant);
+            margin-bottom: 12px;
+        }
+
+        /* ─── Buttons ─────────────────────────────────────────── */
+        .btn {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all 0.15s ease;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-filled {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            padding: 14px 28px;
+            border-radius: var(--radius-full);
+            font-size: 15px;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(103, 80, 164, 0.3);
+        }
+
+        .btn-filled:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 8px rgba(103, 80, 164, 0.4);
+        }
+
+        .btn-tonal {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            padding: 12px 24px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+        }
+
+        .btn-tonal:hover {
+            background-color: #DDD6F3;
+        }
+
+        .btn-outlined {
+            background-color: transparent;
+            color: var(--primary);
+            padding: 12px 24px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            border: 1.5px solid var(--outline-variant);
+        }
+
+        .btn-outlined:hover {
+            background-color: rgba(103, 80, 164, 0.06);
+        }
+
+        .btn-icon-round {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon-round:hover {
+            background-color: #DDD6F3;
+        }
+
+        .btn-icon-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: transparent;
+            color: var(--on-surface);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon-back:hover {
+            background-color: var(--surface-container);
+        }
+
+        /* ─── Counter Screen ──────────────────────────────────── */
+        #counter-screen {
+            background-color: var(--surface);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--outline-variant);
+            background-color: var(--surface);
+        }
+
+        .toolbar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--on-surface);
+        }
+
+        .counter-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 24px;
+            gap: 32px;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ─── Counter Display ─────────────────────────────────── */
+        .counter-display-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .counter-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--on-surface-variant);
+        }
+
+        #count-display {
+            font-size: 96px;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+            letter-spacing: -4px;
+            min-width: 160px;
+            text-align: center;
+            transition: color 0.15s ease;
+        }
+
+        /* ─── Counter Controls ────────────────────────────────── */
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .btn-counter {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            font-size: 28px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .btn-counter:hover {
+            background-color: #DDD6F3;
+            transform: scale(1.05);
+        }
+
+        .btn-counter:active {
+            transform: scale(0.95);
+        }
+
+        .btn-counter-primary {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            width: 72px;
+            height: 72px;
+            font-size: 32px;
+            box-shadow: 0 2px 8px rgba(103, 80, 164, 0.35);
+        }
+
+        .btn-counter-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(103, 80, 164, 0.45);
+        }
+
+        /* ─── Action Buttons ──────────────────────────────────── */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .action-buttons .btn-tonal,
+        .action-buttons .btn-outlined {
+            flex: 1;
+            text-align: center;
+        }
+
+        /* ─── Metrics Card ────────────────────────────────────── */
+        .metrics-card {
+            width: 100%;
+            background-color: var(--surface-container);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+        }
+
+        .metrics-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--on-surface-variant);
+            margin-bottom: 16px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--on-surface);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-divider {
+            height: 1px;
+            background-color: var(--outline-variant);
+            margin: 10px 0;
+        }
+
+        /* ─── Info Card ───────────────────────────────────────── */
+        .info-card {
+            width: 100%;
+            background-color: var(--primary-container);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .info-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: var(--on-primary-container);
+            line-height: 1.5;
+        }
+
+        .info-text strong {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        /* ─── Responsive ──────────────────────────────────────── */
+        @media (max-width: 480px) {
+            .home-card {
+                padding: 36px 24px;
+            }
+
+            #count-display {
+                font-size: 80px;
+            }
+
+            .counter-body {
+                padding: 24px 16px;
+                gap: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="toast hidden" role="alert" aria-live="polite"></div>
+
+    <!-- ══════════════════════════════════════════
+         Home Screen
+    ══════════════════════════════════════════ -->
+    <div id="home-screen" class="screen">
+        <div class="home-card">
+            <div class="app-logo">⚙️</div>
+            <h1 class="app-title">Flywheel</h1>
+            <p class="app-subtitle">State management for<br>Kotlin Multiplatform</p>
+            <div class="platform-badge">
+                <span>JS</span>
+                <span>·</span>
+                <span>Browser</span>
+            </div>
+            <p class="examples-label">Examples</p>
+            <button id="counter-example-btn" class="btn btn-filled">
+                Counter Example
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         Counter Screen
+    ══════════════════════════════════════════ -->
+    <div id="counter-screen" class="screen hidden">
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button id="back-btn" class="btn btn-icon-back" aria-label="Back">←</button>
+            <h2 class="toolbar-title">Counter</h2>
+        </div>
+
+        <!-- Content -->
+        <div class="counter-body">
+
+            <!-- Counter Display -->
+            <div class="counter-display-section">
+                <span class="counter-label">Count</span>
+                <div id="count-display" aria-live="polite" aria-label="Counter value">0</div>
+            </div>
+
+            <!-- +/- Controls -->
+            <div class="counter-controls">
+                <button id="decrement-btn" class="btn btn-counter" aria-label="Decrement">−</button>
+                <button id="increment-btn" class="btn btn-counter btn-counter-primary" aria-label="Increment">+</button>
+            </div>
+
+            <!-- Reset & Show Notification -->
+            <div class="action-buttons">
+                <button id="reset-btn" class="btn btn-tonal">Reset</button>
+                <button id="show-notification-btn" class="btn btn-outlined">Show Notification</button>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="metrics-card">
+                <p class="metrics-title">Performance</p>
+                <div class="metric-row">
+                    <span class="metric-label">Time taken</span>
+                    <span id="time-taken" class="metric-value">—</span>
+                </div>
+                <div class="metric-divider"></div>
+                <div class="metric-row">
+                    <span class="metric-label">Average time</span>
+                    <span id="average-time" class="metric-value">—</span>
+                </div>
+            </div>
+
+            <!-- Info about Flywheel -->
+            <div class="info-card">
+                <span class="info-icon">💡</span>
+                <p class="info-text">
+                    <strong>How it works</strong>
+                    Actions flow through middleware → reducer → state.
+                    Resetting at 0 triggers a guard in <em>EventMiddleware</em>.
+                    <em>CounterSideEffect</em> dispatches a notification after a successful reset.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="jsApp.js"></script>
+</body>
+</html>
