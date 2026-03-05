@@ -1,108 +1,84 @@
-//
-//  CoroutineHelper.swift
-//  iosApp
-//
-//  Created by Abhi Muktheeswarar on 27/11/22.
-//  Copyright © 2022 orgName. All rights reserved.
-//
-
-import Combine
 import Foundation
 import flywheel
 
-typealias OnEach<Output> = (Output) -> Void
-typealias OnCompletion<Failure> = (Failure?) -> Void
+final class TypedCollector<T>: Kotlinx_coroutines_coreFlowCollector {
 
-typealias OnCollect<Output, Failure> = (@escaping OnEach<Output>, @escaping OnCompletion<Failure>) -> flywheel.Cancellable
+    private let onValue: (T) -> Void
+    private let onError: (Error) -> Void
 
-/**
- Creates a `Publisher` that collects output from a flow wrapper function emitting values from an underlying
- instance of `Flow<T>`.
- */
-func collect<Output, Failure>(_ onCollect: @escaping OnCollect<Output, Failure>) -> Publishers.Flow<Output, Failure> {
-    return Publishers.Flow(onCollect: onCollect)
-}
-
-typealias OnCollect1<T1, Output, Failure> = (T1, @escaping OnEach<Output>, @escaping OnCompletion<Failure>) -> flywheel.Cancellable
-
-/**
- Creates a `Publisher` that collects output from a flow wrapper function emitting values from an underlying
- instance of `Flow<T>`.
- */
-func collect<T1, Output, Failure>(_ onCollect: @escaping OnCollect1<T1, Output, Failure>, with arg1: T1) -> Publishers.Flow<Output, Failure> {
-    return Publishers.Flow { onCollect(arg1, $0, $1) }
-}
-
-/**
- Wraps a KMM `Cancellable` in a Combine `Subscription`
- */
-class SharedCancellableSubscription: Subscription {
-    private var isCancelled: Bool = false
-
-    var cancellable: flywheel
-        .Cancellable? {
-        didSet {
-            if isCancelled {
-                cancellable?.cancel()
-            }
-        }
+    init(
+        onValue: @escaping (T) -> Void,
+        onError: @escaping (Error) -> Void
+    ) {
+        self.onValue = onValue
+        self.onError = onError
     }
-
-    func request(_ demand: Subscribers.Demand) {
-        // Not supported
-    }
-
-    func cancel() {
-        isCancelled = true
-        cancellable?.cancel()
-    }
-}
-
-extension Publishers {
-    class Flow<Output, Failure: Error>: Publisher {
-        private let onCollect: OnCollect<Output, Failure>
-
-        init(onCollect: @escaping OnCollect<Output, Failure>) {
-            self.onCollect = onCollect
-        }
-
-        func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
-            let subscription = SharedCancellableSubscription()
-            subscriber.receive(subscription: subscription)
-
-            let cancellable = onCollect({ input in _ = subscriber.receive(input) }) { failure in
-                if let failure = failure {
-                    subscriber.receive(completion: .failure(failure))
-                } else {
-                    subscriber.receive(completion: .finished)
-                }
-            }
-
-            subscription.cancellable = cancellable
-        }
-    }
-}
-
-class Collector<T>: Kotlinx_coroutines_coreFlowCollector {
-
-    let callback:(T) -> Void
-
-    init(callback: @escaping (T) -> Void) {
-        self.callback = callback
-    }
-
 
     func emit(value: Any?, completionHandler: @escaping (Error?) -> Void) {
-        // do whatever you what with the emitted value
-        callback(value as! T)
+        guard let typedValue = value as? T else {
+            let error = NSError(
+                domain: "flywheel.async.collection",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Unexpected flow value type: \(String(describing: value))"]
+            )
+            onError(error)
+            completionHandler(error)
+            return
+        }
 
-        // after you finished your work you need to call completionHandler to
-        // tell that you consumed the value and the next value can be consumed,
-        // otherwise you will not receive the next value
-        //
-        // i think first parameter can be always nil or KotlinUnit()
-        // second parameter is for an error which occurred while consuming the value
-        // passing an error object will throw a NSGenericException in kotlin code, which can be handled or your app will crash
+        onValue(typedValue)
         completionHandler(nil)
+    }
+}
+
+private final class CollectorRetainer {
+    var collector: Kotlinx_coroutines_coreFlowCollector?
+}
+
+func flowStream<T>(
+    from flow: Kotlinx_coroutines_coreFlow,
+    as _: T.Type = T.self
+) -> AsyncThrowingStream<T, Error> {
+    AsyncThrowingStream { continuation in
+        let retainer = CollectorRetainer()
+        let collector = TypedCollector<T>(
+            onValue: { value in
+                continuation.yield(value)
+            },
+            onError: { error in
+                continuation.finish(throwing: error)
+            }
+        )
+
+        retainer.collector = collector
+        flow.collect(collector: collector) { error in
+            if let error {
+                continuation.finish(throwing: error)
+            } else {
+                continuation.finish()
+            }
+            retainer.collector = nil
+        }
+
+        continuation.onTermination = { _ in
+            retainer.collector = nil
+        }
+    }
+}
+
+@MainActor
+func consumeFlow<T>(
+    _ flow: Kotlinx_coroutines_coreFlow,
+    as _: T.Type = T.self,
+    onValue: @escaping (T) -> Void
+) -> Task<Void, Never> {
+    Task {
+        do {
+            for try await value in flowStream(from: flow, as: T.self) {
+                onValue(value)
+            }
+        } catch {
+            debugPrint("Flow stream ended with error: \(error)")
+        }
     }
 }

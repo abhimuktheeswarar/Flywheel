@@ -106,8 +106,8 @@ kotlin {
     }
 
     listOf(
-        watchosX64(),
-        watchosArm64(),
+        watchosDeviceArm64(),
+        watchosSimulatorArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "flywheel"
@@ -128,8 +128,8 @@ kotlin {
     }
 
     listOf(
-        tvosX64(),
         tvosArm64(),
+        tvosSimulatorArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "flywheel"
