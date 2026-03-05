@@ -2,7 +2,8 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.msabhi/flywheel?style=flat)](https://search.maven.org/search?q=com.msabhi.flywheel)
 [![GitHub License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-1.7.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Coroutines](https://img.shields.io/badge/coroutines-1.10.2-blue.svg?logo=kotlin)](https://github.com/Kotlin/kotlinx.coroutines)
 ![badge-android](https://img.shields.io/badge/platform-android-3DDC84.svg?style=flat)
 ![badge-jvm](https://img.shields.io/badge/platform-jvm-red.svg?style=flat)
 ![badge-apple](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-lightgrey?style=flat)
@@ -46,14 +47,20 @@ dependencies {
 ```
 
 
-#### In Apple platforms
+#### In Apple platforms (Swift Package Manager)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fabhimuktheeswarar%2FFlywheel%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/abhimuktheeswarar/Flywheel)
 
-You can use the [Swift Package Manager](https://swift.org/package-manager) to install `Flywheel` by adding the proper description to your `Package.swift` file:
+In Xcode, go to **File → Add Package Dependencies** and enter the repository URL:
+
+```
+https://github.com/abhimuktheeswarar/Flywheel.git
+```
+
+Or add it to your `Package.swift`:
 
 ```swift
-// swift-tools-version:5.3
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
@@ -63,7 +70,28 @@ let package = Package(
     ]
 )
 ```
-Then run `swift build` whenever you get prepared.
+
+Each GitHub release includes a `Flywheel.xcframework.zip` artifact with a matching `Package.swift` manifest containing the URL and checksum.
+
+#### In Apple platforms (CocoaPods)
+
+Add the following to your `Podfile`:
+
+```ruby
+pod 'Flywheel', '~> 1.1.5-RC'
+```
+
+#### Building the XCFramework locally
+
+The XCFramework is not checked into the repository. To build it from source:
+
+```bash
+# Build and copy into flywheel/xcframework/ for local SPM / CocoaPods use
+./gradlew :flywheel:copyXCFrameworkToRepo
+
+# Build, zip and generate a release-ready Package.swift with checksum
+./gradlew :flywheel:generatePackageSwift
+```
 
 ## **Usage**
 

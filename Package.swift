@@ -1,9 +1,19 @@
 // swift-tools-version:5.9
 import PackageDescription
 
+// Local-development Package.swift.
+//
+// The XCFramework referenced below is NOT checked into git.
+// To populate it locally, run:
+//   ./gradlew :flywheel:copyXCFrameworkToRepo
+//
+// For release/remote SPM consumption (URL + checksum), run:
+//   ./gradlew :flywheel:generatePackageSwift
+// and use the generated file at flywheel/build/spm/Package.swift
+
 let package = Package(
     name: "Flywheel",
-    platforms: [.iOS("16.0"), .watchOS("7.0"), .tvOS("16.0"), .macOS("13.0")],
+    platforms: [.iOS(.v16), .watchOS(.v9), .tvOS(.v16), .macOS(.v13)],
     products: [
         .library(
             name: "Flywheel",

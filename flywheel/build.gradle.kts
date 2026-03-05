@@ -176,6 +176,101 @@ android {
 
 //----------------------------------------------------------------------------------
 
+val spmDir = layout.buildDirectory.dir("spm")
+
+val assembleFlywheelXCFrameworkForSPM by tasks.registering(Zip::class) {
+    description = "Zips the release XCFramework for SPM distribution."
+    group = "spm"
+
+    dependsOn("assembleFlywheelReleaseXCFramework")
+
+    val xcframeworkDir = layout.buildDirectory.dir("XCFrameworks/release")
+    from(xcframeworkDir)
+    destinationDirectory.set(spmDir)
+    archiveFileName.set("Flywheel.xcframework.zip")
+}
+
+abstract class GeneratePackageSwiftTask : DefaultTask() {
+
+    @get:InputFile
+    abstract val zipFile: RegularFileProperty
+
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @get:Input
+    abstract val repoUrl: Property<String>
+
+    @get:Input
+    abstract val packageVersion: Property<String>
+
+    @TaskAction
+    fun generate() {
+        val zip = zipFile.get().asFile
+        val process = ProcessBuilder("swift", "package", "compute-checksum", zip.absolutePath)
+            .redirectErrorStream(true)
+            .start()
+        val checksum = process.inputStream.bufferedReader().readText().trim()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("swift package compute-checksum failed (exit $exitCode): $checksum")
+        }
+
+        val url = repoUrl.get()
+        val ver = packageVersion.get()
+        val packageSwift = """
+            |// swift-tools-version:5.9
+            |import PackageDescription
+            |
+            |let package = Package(
+            |    name: "Flywheel",
+            |    platforms: [.iOS(.v16), .watchOS(.v9), .tvOS(.v16), .macOS(.v13)],
+            |    products: [
+            |        .library(
+            |            name: "Flywheel",
+            |            targets: ["Flywheel"]
+            |        ),
+            |    ],
+            |    targets: [
+            |        .binaryTarget(
+            |            name: "Flywheel",
+            |            url: "$url/releases/download/v$ver/Flywheel.xcframework.zip",
+            |            checksum: "$checksum"
+            |        ),
+            |    ]
+            |)
+            |""".trimMargin()
+
+        outputFile.get().asFile.writeText(packageSwift)
+        logger.lifecycle("Generated Package.swift (checksum: $checksum)")
+        logger.lifecycle("  -> ${outputFile.get().asFile.absolutePath}")
+    }
+}
+
+val generatePackageSwift by tasks.registering(GeneratePackageSwiftTask::class) {
+    description = "Generates Package.swift for SPM with checksum of the XCFramework zip."
+    group = "spm"
+
+    dependsOn(assembleFlywheelXCFrameworkForSPM)
+
+    zipFile.set(spmDir.map { it.file("Flywheel.xcframework.zip") })
+    outputFile.set(spmDir.map { it.file("Package.swift") })
+    repoUrl.set(POM_URL)
+    packageVersion.set(VERSION_NAME)
+}
+
+val copyXCFrameworkToRepo by tasks.registering(Copy::class) {
+    description = "Copies the release XCFramework into the checked-in xcframework directory for local SPM usage."
+    group = "spm"
+
+    dependsOn("assembleFlywheelReleaseXCFramework")
+
+    from(layout.buildDirectory.dir("XCFrameworks/release"))
+    into(project.projectDir.resolve("xcframework"))
+}
+
+//----------------------------------------------------------------------------------
+
 val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
     from(tasks.named("dokkaGenerateModuleHtml").map { it.outputs })

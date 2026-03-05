@@ -17,3 +17,6 @@
 *.hprof
 *.klib
 /Flywheel.wiki/
+
+# XCFramework build output (regenerate via: ./gradlew :flywheel:copyXCFrameworkToRepo)
+flywheel/xcframework/
