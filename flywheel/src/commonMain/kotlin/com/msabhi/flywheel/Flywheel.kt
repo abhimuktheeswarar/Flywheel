@@ -62,6 +62,12 @@ interface SkipReducer : Action
 private object ForceDistinctAction : Action
 
 /**
+ * Internal Action used by [StateReserve.awaitState] to synchronize with the middleware pipeline.
+ * Flows through [StateReserve.actionsChannel] for FIFO ordering but skips middleware entirely.
+ */
+private class BarrierAction(val deferred: CompletableDeferred<Unit>) : Action
+
+/**
  * Objects holding the state of a application/feature must implement [State].
  */
 interface State
@@ -371,8 +377,13 @@ class StateReserve<S : State>(
         config.scope.launch {
             actionsChannel.consumeEach { action ->
                 if (isActive) {
-                    mutableActions.tryEmit(action)
-                    this@StateReserve.middlewares?.invoke(action) ?: dispatcher(action)
+                    when (action) {
+                        is BarrierAction -> action.deferred.complete(Unit)
+                        else -> {
+                            mutableActions.tryEmit(action)
+                            this@StateReserve.middlewares?.invoke(action) ?: dispatcher(action)
+                        }
+                    }
                 }
             }
         }
@@ -418,6 +429,9 @@ class StateReserve<S : State>(
      * So if your code relies on certain state, use this function.
      */
     suspend fun awaitState(): S {
+        val barrier = CompletableDeferred<Unit>()
+        actionsChannel.send(BarrierAction(barrier))
+        barrier.await()
         requestStatesChannel.send(Unit)
         return sendStatesChannel.receive()
     }
