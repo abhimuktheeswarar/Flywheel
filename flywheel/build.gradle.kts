@@ -1,3 +1,6 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinMultiplatform
+import java.io.File
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -7,40 +10,25 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.dokka)
-    id("maven-publish")
+    alias(libs.plugins.vanniktechMavenPublish)
     id("signing")
 }
 
 val GROUP: String by project
 val VERSION_NAME: String by project
 
-val POM_NAME: String by project
-val POM_DESCRIPTION: String by project
-val POM_URL: String by project
-val POM_SCM_URL: String by project
-val POM_SCM_CONNECTION: String by project
-val POM_SCM_DEV_CONNECTION: String by project
-val POM_ISSUES_NAME: String by project
-val POM_ISSUES_URL: String by project
-val POM_LICENCE_NAME: String by project
-val POM_LICENCE_URL: String by project
-val POM_LICENCE_DIST: String by project
-val POM_DEVELOPER_ID: String by project
-val POM_DEVELOPER_NAME: String by project
-
-fun localProperty(key: String): String? {
-    val localProperties = Properties()
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { localProperties.load(it) }
-    }
-    return localProperties.getProperty(key) ?: System.getenv(key)
-}
-
-val POM_DEVELOPER_EMAIL: String = localProperty("POM_DEVELOPER_EMAIL") ?: ""
-
 group = GROUP
 version = VERSION_NAME
+
+// Read local.properties for signing credentials and Maven Central credentials.
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.reader().use { reader -> localProps.load(reader) }
+}
+// Maven Central credentials must be visible as Gradle properties for the vanniktech plugin.
+localProps.getProperty("SONATYPE_USERNAME")?.takeIf(String::isNotBlank)?.let { ext.set("mavenCentralUsername", it) }
+localProps.getProperty("SONATYPE_PASSWORD")?.takeIf(String::isNotBlank)?.let { ext.set("mavenCentralPassword", it) }
 
 val xcf = XCFramework("Flywheel")
 
@@ -66,8 +54,6 @@ kotlin {
 
     @Suppress("DEPRECATION")
     androidTarget {
-        publishAllLibraryVariants()
-        publishLibraryVariantsGroupedByFlavor = true
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
@@ -174,6 +160,54 @@ android {
 
 //----------------------------------------------------------------------------------
 
+mavenPublishing {
+    publishToMavenCentral()
+    configure(KotlinMultiplatform(
+        javadocJar = JavadocJar.Dokka("dokkaGenerateModuleHtml"),
+    ))
+    pom {
+        issueManagement {
+            system.set("Github issues")
+            url.set("https://github.com/abhimuktheeswarar/Flywheel/issues")
+        }
+    }
+}
+
+signing {
+    val signingKey = localProps.getProperty("SIGNING_KEY")
+    val signingPassword = localProps.getProperty("SIGNING_PASSWORD")
+    val skipSigning = project.findProperty("skipSigning") == "true"
+    if (!skipSigning && !signingKey.isNullOrBlank()) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications)
+    }
+}
+
+// Wrapper so IDE shows a single task that runs publish with credentials from local.properties.
+val rootDirPath: String = rootProject.projectDir.absolutePath
+val gradlewName: String = if (System.getProperty("os.name").lowercase().contains("windows")) "gradlew.bat" else "gradlew"
+tasks.register<Exec>("publishAndReleaseToMavenCentralFromLocal") {
+    group = "publishing"
+    description = "Publishes to Maven Central with automatic release, loading credentials from local.properties"
+    commandLine(
+        File(rootDirPath, gradlewName).absolutePath,
+        ":flywheel:publishAndReleaseToMavenCentral"
+    )
+    workingDir = File(rootDirPath)
+    // Use current JVM so child build does not inherit invalid JAVA_HOME from IDE
+    environment("JAVA_HOME", System.getProperty("java.home"))
+    // Pass Maven Central credentials as env vars so Gradle picks them up as project properties.
+    // Gradle maps ORG_GRADLE_PROJECT_* to project properties.
+    localProps.getProperty("SONATYPE_USERNAME")?.takeIf(String::isNotBlank)?.let {
+        environment("ORG_GRADLE_PROJECT_mavenCentralUsername", it)
+    }
+    localProps.getProperty("SONATYPE_PASSWORD")?.takeIf(String::isNotBlank)?.let {
+        environment("ORG_GRADLE_PROJECT_mavenCentralPassword", it)
+    }
+}
+
+//----------------------------------------------------------------------------------
+
 val spmDir = layout.buildDirectory.dir("spm")
 
 val assembleFlywheelXCFrameworkForSPM by tasks.registering(Zip::class) {
@@ -253,7 +287,7 @@ val generatePackageSwift by tasks.registering(GeneratePackageSwiftTask::class) {
 
     zipFile.set(spmDir.map { it.file("Flywheel.xcframework.zip") })
     outputFile.set(spmDir.map { it.file("Package.swift") })
-    repoUrl.set(POM_URL)
+    repoUrl.set(project.findProperty("POM_URL")?.toString() ?: "")
     packageVersion.set(VERSION_NAME)
 }
 
@@ -265,68 +299,4 @@ val copyXCFrameworkToRepo by tasks.registering(Copy::class) {
 
     from(layout.buildDirectory.dir("XCFrameworks/release"))
     into(project.projectDir.resolve("xcframework"))
-}
-
-//----------------------------------------------------------------------------------
-
-val javadocJar = tasks.register<Jar>("javadocJar") {
-    archiveClassifier.set("javadoc")
-    dependsOn(tasks.named("dokkaGenerateModuleHtml"))
-    from(layout.buildDirectory.dir("dokka-module/html"))
-}
-
-publishing {
-
-    repositories {
-        mavenLocal()
-        // Sonatype/Central Portal repository is provided by io.github.gradle-nexus.publish-plugin (root build.gradle.kts).
-    }
-
-    publications {
-
-        withType<MavenPublication> {
-            pom {
-                name.set(POM_NAME)
-                description.set(POM_DESCRIPTION)
-                url.set(POM_URL)
-                licenses {
-                    license {
-                        name.set(POM_LICENCE_NAME)
-                        url.set(POM_LICENCE_URL)
-                        distribution.set(POM_LICENCE_DIST)
-                    }
-                }
-                issueManagement {
-                    system.set(POM_ISSUES_NAME)
-                    url.set(POM_ISSUES_URL)
-                }
-                scm {
-                    connection.set(POM_SCM_CONNECTION)
-                    url.set(POM_SCM_URL)
-                    developerConnection.set(POM_SCM_DEV_CONNECTION)
-                }
-                developers {
-                    developer {
-                        id.set(POM_DEVELOPER_ID)
-                        name.set(POM_DEVELOPER_NAME)
-                        email.set(POM_DEVELOPER_EMAIL)
-                    }
-                }
-            }
-        }
-        // Attach javadoc only to the root KMP publication to avoid multiple sign tasks writing the same .asc
-        named<MavenPublication>("kotlinMultiplatform") {
-            artifact(javadocJar)
-        }
-    }
-}
-
-signing {
-    val signingKey = localProperty("SIGNING_KEY")
-    val signingPassword = localProperty("SIGNING_PASSWORD")
-    val skipSigning = project.findProperty("skipSigning") == "true"
-    if (!skipSigning && signingKey != null && signingKey.isNotBlank()) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(publishing.publications)
-    }
 }
