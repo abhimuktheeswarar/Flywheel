@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'Flywheel'
-    spec.version                  = '1.1.5-RC'
+    spec.version                  = '1.1.6'
     spec.homepage                 = 'https://github.com/abhimuktheeswarar/Flywheel'
     spec.source                   = { :git => "https://github.com/abhimuktheeswarar/Flywheel.git", :tag => "v#{spec.version}" }
     spec.authors                  = 'Abhi Muktheeswarar'

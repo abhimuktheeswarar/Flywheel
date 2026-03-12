@@ -38,8 +38,6 @@ fun localProperty(key: String): String? {
 }
 
 val POM_DEVELOPER_EMAIL: String = localProperty("POM_DEVELOPER_EMAIL") ?: ""
-val SONATYPE_USERNAME: String = localProperty("SONATYPE_USERNAME") ?: ""
-val SONATYPE_PASSWORD: String = localProperty("SONATYPE_PASSWORD") ?: ""
 
 group = GROUP
 version = VERSION_NAME
@@ -273,32 +271,20 @@ val copyXCFrameworkToRepo by tasks.registering(Copy::class) {
 
 val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
-    from(tasks.named("dokkaGenerateModuleHtml").map { it.outputs })
+    dependsOn(tasks.named("dokkaGenerateModuleHtml"))
+    from(layout.buildDirectory.dir("dokka-module/html"))
 }
 
 publishing {
 
     repositories {
-        maven {
-            name = "sonatype"
-            setUrl {
-                val releasesRepoUrl =
-                    "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                val snapshotsRepoUrl =
-                    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-            }
-            credentials {
-                username = SONATYPE_USERNAME
-                password = SONATYPE_PASSWORD
-            }
-        }
+        mavenLocal()
+        // Sonatype/Central Portal repository is provided by io.github.gradle-nexus.publish-plugin (root build.gradle.kts).
     }
 
     publications {
 
         withType<MavenPublication> {
-            artifact(javadocJar)
             pom {
                 name.set(POM_NAME)
                 description.set(POM_DESCRIPTION)
@@ -328,12 +314,19 @@ publishing {
                 }
             }
         }
+        // Attach javadoc only to the root KMP publication to avoid multiple sign tasks writing the same .asc
+        named<MavenPublication>("kotlinMultiplatform") {
+            artifact(javadocJar)
+        }
     }
 }
 
 signing {
     val signingKey = localProperty("SIGNING_KEY")
     val signingPassword = localProperty("SIGNING_PASSWORD")
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications)
+    val skipSigning = project.findProperty("skipSigning") == "true"
+    if (!skipSigning && signingKey != null && signingKey.isNotBlank()) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications)
+    }
 }

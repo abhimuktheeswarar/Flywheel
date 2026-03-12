@@ -30,7 +30,7 @@ kotlin {
   sourceSets {
       val commonMain by getting {
           dependencies {
-              implementation("com.msabhi:flywheel:1.1.5-RC")
+              implementation("com.msabhi:flywheel:1.1.6")
           }
       }
   }
@@ -42,7 +42,7 @@ kotlin {
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel-android:1.1.5-RC")
+    implementation("com.msabhi:flywheel-android:1.1.6")
 }
 ```
 
@@ -66,7 +66,7 @@ import PackageDescription
 let package = Package(
     name: "YOUR_PROJECT_NAME",
     dependencies: [
-        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.5-RC"),
+        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.6"),
     ]
 )
 ```
@@ -78,7 +78,7 @@ Each GitHub release includes a `Flywheel.xcframework.zip` artifact with a matchi
 Add the following to your `Podfile`:
 
 ```ruby
-pod 'Flywheel', '~> 1.1.5-RC'
+pod 'Flywheel', '~> 1.1.6'
 ```
 
 #### Building the XCFramework locally
