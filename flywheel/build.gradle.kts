@@ -15,10 +15,9 @@ plugins {
 }
 
 val GROUP: String by project
-val VERSION_NAME: String by project
 
 group = GROUP
-version = VERSION_NAME
+version = libs.versions.flywheel.get()
 
 // Read local.properties for signing credentials and Maven Central credentials.
 val localProps = Properties()
@@ -288,7 +287,7 @@ val generatePackageSwift by tasks.registering(GeneratePackageSwiftTask::class) {
     zipFile.set(spmDir.map { it.file("Flywheel.xcframework.zip") })
     outputFile.set(spmDir.map { it.file("Package.swift") })
     repoUrl.set(project.findProperty("POM_URL")?.toString() ?: "")
-    packageVersion.set(VERSION_NAME)
+    packageVersion.set(libs.versions.flywheel.get())
 }
 
 val copyXCFrameworkToRepo by tasks.registering(Copy::class) {
@@ -300,3 +299,11 @@ val copyXCFrameworkToRepo by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("XCFrameworks/release"))
     into(project.projectDir.resolve("xcframework"))
 }
+
+// Alias so releaseSpmFromIDE appears under :flywheel in the Gradle tool window
+tasks.register("releaseSpmFromIDE") {
+    group = "release"
+    description = "Full SPM release from IDE: build, git add/commit/tag, push, GitHub release"
+    dependsOn(":releaseSpmFromIDE")
+}
+

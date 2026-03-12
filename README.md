@@ -73,24 +73,19 @@ let package = Package(
 
 Each GitHub release includes a `Flywheel.xcframework.zip` artifact with a matching `Package.swift` manifest containing the URL and checksum.
 
-#### In Apple platforms (CocoaPods)
-
-Add the following to your `Podfile`:
-
-```ruby
-pod 'Flywheel', '~> 1.1.6'
-```
-
 #### Building the XCFramework locally
 
 The XCFramework is not checked into the repository. To build it from source:
 
 ```bash
-# Build and copy into flywheel/xcframework/ for local SPM / CocoaPods use
+# Build and copy into flywheel/xcframework/ for local SPM use
 ./gradlew :flywheel:copyXCFrameworkToRepo
 
 # Build, zip and generate a release-ready Package.swift with checksum
 ./gradlew :flywheel:generatePackageSwift
+
+# Full release prep: build XCFramework, generate Package.swift, copy to repo root
+./gradlew prepareSpmRelease
 ```
 
 ## **Usage**

@@ -19,10 +19,9 @@ plugins {
 }
 
 val GROUP: String by project
-val VERSION_NAME: String by project
 
 group = GROUP
-version = VERSION_NAME
+version = libs.versions.flywheel.get()
 
 kotlin {
     listOf(linuxX64(), macosX64(), macosArm64()).forEach { target ->

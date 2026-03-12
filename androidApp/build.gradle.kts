@@ -4,10 +4,9 @@ plugins {
 }
 
 val GROUP: String by project
-val VERSION_NAME: String by project
 
 group = GROUP
-version = VERSION_NAME
+version = libs.versions.flywheel.get()
 
 android {
     namespace = "com.msabhi.androidApp"
