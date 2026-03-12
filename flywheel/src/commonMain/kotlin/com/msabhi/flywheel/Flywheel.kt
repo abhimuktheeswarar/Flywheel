@@ -67,6 +67,7 @@ private object ForceDistinctAction : Action
  */
 private class BarrierAction(val deferred: CompletableDeferred<Unit>) : Action
 
+
 /**
  * Objects holding the state of a application/feature must implement [State].
  */
@@ -272,7 +273,6 @@ private fun <S : State> CoroutineScope.stateMachine(
 
             inputActions.onReceive { action ->
                 runCatching { reduce(action, state) }.fold({ newState ->
-
                     transition(action, state, newState)
 
                     if (ignoreDuplicateState) {
