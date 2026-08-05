@@ -53,6 +53,9 @@ kotlin {
 
     @Suppress("DEPRECATION")
     androidTarget {
+        // Without this, KMP publishes no Android artifact at all (vanniktech 0.35.0 defaults
+        // androidVariantsToPublish to emptyList). Publishes com.msabhi:flywheel-android.
+        publishLibraryVariants("release")
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
