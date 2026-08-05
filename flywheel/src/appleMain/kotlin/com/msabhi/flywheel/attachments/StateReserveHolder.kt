@@ -60,6 +60,10 @@ open class StateReserveHolder<S : State>(
         stateReserve.dispatch(action)
     }
 
+    fun setState(name: String? = null, reducer: (S) -> S) {
+        stateReserve.setState(name) { reducer(this) }
+    }
+
     fun onCleared() {
         stateReserve.terminate()
     }

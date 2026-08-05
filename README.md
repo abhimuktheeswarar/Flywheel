@@ -126,8 +126,10 @@ This is how a simple counter example looks like.
 
     ```Kotlin
     val stateReserve = StateReserve(
+        config = getDefaultStateReserveConfig(),
         initialState = InitialState.set(CounterState()),
-        reduce = reduce)
+        reduce = reduce,
+        middlewares = null)
     ```
 
 5. Listen for state changes
@@ -140,6 +142,12 @@ This is how a simple counter example looks like.
 
     ```Kotlin
     stateReserve.dispatch(IncrementAction)
+    ```
+
+7. To update the state from concurrent code (e.g. multiple SideEffects), use `setState`. The transform is applied atomically against the **current** state on the state machine, so concurrent updates compose instead of overwriting each other. Do the heavy computation first, then apply only the precomputed result in the transform.
+
+    ```Kotlin
+    stateReserve.setState { copy(counter = counter + 1) }
     ```
 
 
