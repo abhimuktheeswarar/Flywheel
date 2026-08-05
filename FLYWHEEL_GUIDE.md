@@ -270,14 +270,14 @@ val reducer = reducerForAction<MaterialAction, MaterialState> { action, state ->
 
 ### Kotlin Multiplatform (common / shared)
 
-- Add `implementation("com.msabhi:flywheel:1.1.6")` in `commonMain`
+- Add `implementation("com.msabhi:flywheel:1.2.0")` in `commonMain`
 - Core concepts (State, Action, Reducer, SideEffect, Middleware) are platform-agnostic
 - Uses multithreaded coroutines; handle threading carefully on non-JVM platforms (JS, Native, Apple)
 - **Sample:** nativeApp, jsApp — `getDefaultStateReserveConfig`, shared KMP usage
 
 ### Android
 
-- **Dependency:** `implementation("com.msabhi:flywheel-android:1.1.6")` in app module
+- **Dependency:** `implementation("com.msabhi:flywheel-android:1.2.0")` in app module
 - Use Flywheel with ViewModel; call `stateReserve.terminate()` in `onCleared()`
 - Provide `CoroutineScope` with `Dispatchers.Default + SupervisorJob()` (e.g. `getDefaultScope()`); do **not** use `viewModelScope` for StateReserve
 - Collect `states` in `lifecycleScope.launchWhenStarted` or `repeatOnLifecycle(Lifecycle.State.STARTED)`
@@ -291,7 +291,7 @@ val reducer = reducerForAction<MaterialAction, MaterialState> { action, state ->
 
 ### Apple (Swift / SwiftUI)
 
-- **Dependency:** Swift Package Manager — `.package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.6")`
+- **Dependency:** Swift Package Manager — `.package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.2.0")`
 - `StateReserveHolder` helps create `StateReserve` from Swift
 - State must implement `Equatable` and `Hashable` for `ignoreDuplicateState` behavior on Objective-C interop
 - Set `ignoreDuplicateState = false` when State is defined in Swift/Objective-C

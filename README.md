@@ -30,7 +30,7 @@ kotlin {
   sourceSets {
       val commonMain by getting {
           dependencies {
-              implementation("com.msabhi:flywheel:1.1.7")
+              implementation("com.msabhi:flywheel:1.2.0")
           }
       }
   }
@@ -42,7 +42,7 @@ kotlin {
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel-android:1.1.7")
+    implementation("com.msabhi:flywheel-android:1.2.0")
 }
 ```
 
@@ -66,7 +66,7 @@ import PackageDescription
 let package = Package(
     name: "YOUR_PROJECT_NAME",
     dependencies: [
-        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.1.7"),
+        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.2.0"),
     ]
 )
 ```

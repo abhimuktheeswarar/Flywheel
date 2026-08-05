@@ -2,6 +2,16 @@
 
 Releases are published to [Maven Central](https://central.sonatype.com/) via the [Central Portal](https://central.sonatype.com/), using the [gradle-maven-publish-plugin](https://github.com/vanniktech/gradle-maven-publish-plugin).
 
+## Release checklist
+
+1. Bump `flywheel` in `gradle/libs.versions.toml` (single source of truth; e.g. `1.2.0`).
+2. Update the dependency version snippets in `README.md` and `FLYWHEEL_GUIDE.md` (Maven, Android, SPM).
+3. Do **not** hand-edit the root `Package.swift` — `prepareSpmRelease` regenerates it with the new version's zip URL and checksum.
+4. Run the tests: `./gradlew :flywheel:testDebugUnitTest :flywheel:jsNodeTest :flywheel:macosArm64Test`.
+5. Publish to Maven Central (see below).
+6. Run the SPM release (see below) — it commits the regenerated `Package.swift` and tags `v<version>`.
+7. Push any pending wiki drafts (the wiki is a separate repo, `Flywheel.wiki.git`) so the docs go live with the release.
+
 ## Maven Central
 
 ### Prerequisites
@@ -93,7 +103,7 @@ Consumers add `https://github.com/abhimuktheeswarar/Flywheel.git` and select the
 
 ### Version alignment
 
-The version is defined in one place: `gradle/libs.versions.toml` (key `flywheel`). Ensure it matches the release tag (e.g. `v1.1.6`).
+The version is defined in one place: `gradle/libs.versions.toml` (key `flywheel`). Ensure it matches the release tag (e.g. `v1.2.0`).
 
 ### Caveats
 
