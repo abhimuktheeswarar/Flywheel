@@ -13,7 +13,7 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "Flywheel",
-            url: "https://github.com/abhimuktheeswarar/Flywheel/releases/download/v1.1.6/Flywheel.xcframework.zip",
+            url: "https://github.com/abhimuktheeswarar/Flywheel/releases/download/v1.1.7/Flywheel.xcframework.zip",
             checksum: "866703fd1845edc4a83a2d346d8291d5fbc0f8090533700f726c64eb35e9606e"
         ),
     ]
