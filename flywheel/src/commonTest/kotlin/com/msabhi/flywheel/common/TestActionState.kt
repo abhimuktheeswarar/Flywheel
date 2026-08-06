@@ -17,6 +17,7 @@
 package com.msabhi.flywheel.common
 
 import com.msabhi.flywheel.Action
+import com.msabhi.flywheel.ReduceAction
 import com.msabhi.flywheel.State
 
 sealed interface TestCounterAction : Action {
@@ -31,3 +32,13 @@ sealed interface TestCounterAction : Action {
 }
 
 data class TestCounterState(val count: Int = 0, val updatedOn: Long = 0) : State
+
+object DoubleCountAction : ReduceAction<TestCounterState> {
+    override fun reduce(state: TestCounterState): TestCounterState =
+        state.copy(count = state.count * 2)
+}
+
+data class FailingReduceAction(val message: String) : ReduceAction<TestCounterState> {
+    override fun reduce(state: TestCounterState): TestCounterState =
+        throw IllegalStateException(message)
+}

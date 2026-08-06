@@ -61,6 +61,7 @@ sealed interface CounterAction : Action {
 ```
 
 **Built-in action types:**
+- `ReduceAction<S>` — self-reducing action: carries a delta and its own `reduce(state)` merge, applied against the **current** state instead of the user reducer. The default way to update state derived from its current value (see Collections rules)
 - `SkipReducer` — action never reaches reducer (use with `skipMiddleware`)
 - `EventAction` — one-off events (toast, snackbar)
 - `NavigateAction` — navigation
@@ -92,8 +93,7 @@ val reduce = reducerForAction<CounterAction, CounterState> { action, state ->
 
 - Holds state and reducer
 - Exposes `states: Flow<S>`, `actions: Flow<Action>`, `actionStates: Flow<ActionState>`
-- Methods: `dispatch(action)`, `setState { }`, `state()`, `awaitState()`, `terminate()`, `restoreState()`
-- `setState(name) { copy(...) }` dispatches a `SetStateAction` — a transform applied atomically against the **current** state on the state machine, FIFO-ordered with `dispatch`. Use it for read-modify-write updates; keep the transform fast and pure (heavy computation belongs in the SideEffect before calling it)
+- Methods: `dispatch(action)`, `state()`, `awaitState()`, `terminate()`, `restoreState()`
 - **Always call `terminate()`** when the StateReserve is no longer needed (e.g. in Android ViewModel `onCleared()`)
 
 **Flow semantics:** `actions` emits as soon as action reaches `dispatch` (before middleware/reducer) — use for navigation, logging. `actionStates` emits after action passes through middleware and reducer — use when SideEffect needs post-reducer state. `states` emits after reducer produces new state — use for UI. `actionStates` emits even when reducer returns the same state. **Subscription timing:** `actions` and `actionStates` use `SharedFlow` with no replay; subscribe **before** dispatching or you may miss events.
@@ -116,7 +116,7 @@ val reduce = reducerForAction<CounterAction, CounterState> { action, state ->
 - Subscribes to `actions`, `actionStates`, or `transitions`
 - Use `actionStates` when you need state after reducer; use `actions` when you don't (e.g. navigation)
 - Prefer `awaitState()` over `state()` when you need up-to-date state (waits for pending actions)
-- Use `setState { }` for read-modify-write updates: never compute a new collection from a state snapshot and dispatch the whole thing — `awaitState()` does **not** protect against concurrent writers (two SideEffects can both await, get the same snapshot, and overwrite each other)
+- Dispatch a `ReduceAction` delta for read-modify-write updates: never compute a new collection from a state snapshot and dispatch the whole thing — `awaitState()` does **not** protect against concurrent writers (two SideEffects can both await, get the same snapshot, and overwrite each other)
 
 ```kotlin
 class LoadMoviesSideEffect(
@@ -183,11 +183,11 @@ val reduce: Reduce<GoodState> = { action, state ->
 
 ### ❌ Do NOT do heavy iteration in reducers
 
-Heavy iteration on the state machine makes every other action wait longer in the queue. Do the expensive computation (parsing, filtering, building lookup maps) in a SideEffect — but **do not** dispatch the resulting full collection as a replacement (see next rule). Dispatch the change instead: a `setState { }` transform or a delta action. Applying a precomputed delta (`items + delta`, `items - keys`, a single-pass merge) in a reducer or transform is cheap and safe.
+Heavy iteration on the state machine makes every other action wait longer in the queue. Do the expensive computation (parsing, filtering, building lookup maps) in a SideEffect — but **do not** dispatch the resulting full collection as a replacement (see next rule). Dispatch the change instead: a `ReduceAction` delta. Applying a precomputed delta (`items + delta`, `items - keys`, a single-pass merge) in a `reduce` is cheap and safe.
 
 ### ❌ Do NOT use full collection replacement with concurrent SideEffects
 
-When multiple SideEffects react to the same trigger (e.g. `TriggerProcessing`) and each reads state, modifies it, and dispatches a **full replacement** action, they can read the same snapshot. The reducer applies them sequentially, so the last dispatch overwrites earlier ones — lost-update problem. **Fix:** dispatch the *operation* instead of the snapshot-derived value — `setState { }` (primary) or delta actions.
+When multiple SideEffects react to the same trigger (e.g. `TriggerProcessing`) and each reads state, modifies it, and dispatches a **full replacement** action, they can read the same snapshot. The reducer applies them sequentially, so the last dispatch overwrites earlier ones — lost-update problem. **Fix:** dispatch the *operation* instead of the snapshot-derived value — a `ReduceAction` (primary) or a delta action merged in the reducer.
 
 ```kotlin
 // ❌ WRONG — ConcurrentStateModificationTest documents this bug
@@ -202,23 +202,27 @@ reduce = { action, state ->
 }
 ```
 
-### ✅ Use setState for concurrent read-modify-write (primary fix)
+### ✅ Use ReduceAction for concurrent read-modify-write (primary fix)
 
-`setState { }` carries the transform to the state machine, which applies it against the **current** state — not the snapshot the SideEffect saw. Concurrent transforms compose instead of overwriting each other:
+A `ReduceAction` is a normal, typed, named action that carries a **delta** in its properties and its own `reduce(state)` merge. The state machine applies `reduce` against the **current** state — not the snapshot the SideEffect saw — so concurrent updates compose instead of overwriting each other. Being a regular action, it stays part of the flow: middleware sees it, it appears in `actions`/`actionStates`, and other SideEffects can react to it.
 
 ```kotlin
-// ✅ Correct — SetStateTest proves both SideEffects' changes survive
+// ✅ Correct — ReduceActionTest proves both SideEffects' changes survive
+data class MergeItemsAction(val entries: Map<String, Int>) : ReduceAction<CollectionState> {
+    override fun reduce(state: CollectionState) = state.copy(items = state.items + entries)
+}
+
 // In the SideEffect: heavy computation stays here, off the state machine
-val delta = heavyProcessing(response)          // e.g. build a Map of updates
-// Only the cheap merge runs on the state machine, against the CURRENT state
-setState("mergeItems") { copy(items = items + delta) }
+val delta = heavyProcessing(response)   // e.g. build a Map of updates
+// Dispatch the operation like any other action; reduce() merges into the CURRENT state
+dispatch(MergeItemsAction(delta))
 ```
 
-Rules for transforms: keep them **fast and pure** — no I/O, no heavy iteration, no side effects; precompute everything before calling `setState`. Write them defensively against concurrent edits (key-based updates rather than index-based; update-if-present). A throwing transform leaves state unchanged, same as a throwing reducer.
+Rules for `reduce()`: keep it **fast and pure** — no I/O, no heavy iteration, no side effects; put only precomputed data in the action. Write it defensively against concurrent edits (key-based updates rather than index-based; update-if-present). A throwing `reduce()` leaves state unchanged, same as a throwing reducer.
 
-### ✅ Or use delta/merge actions for concurrent updates
+### ✅ Or use delta actions merged in the reducer
 
-Alternative when the change should be visible as a typed, loggable action: dispatch only the **delta** (new entries to add/remove), and merge in the reducer:
+Equivalent safety with the merge living in the central reducer instead of the action — useful when one reducer handles a family of deltas:
 
 ```kotlin
 // ✅ Correct — ConcurrentDeltaDispatchTest
@@ -270,14 +274,14 @@ val reducer = reducerForAction<MaterialAction, MaterialState> { action, state ->
 
 ### Kotlin Multiplatform (common / shared)
 
-- Add `implementation("com.msabhi:flywheel:1.2.0")` in `commonMain`
+- Add `implementation("com.msabhi:flywheel:1.3.0")` in `commonMain`
 - Core concepts (State, Action, Reducer, SideEffect, Middleware) are platform-agnostic
 - Uses multithreaded coroutines; handle threading carefully on non-JVM platforms (JS, Native, Apple)
 - **Sample:** nativeApp, jsApp — `getDefaultStateReserveConfig`, shared KMP usage
 
 ### Android
 
-- **Dependency:** `implementation("com.msabhi:flywheel-android:1.2.0")` in app module
+- **Dependency:** `implementation("com.msabhi:flywheel-android:1.3.0")` in app module
 - Use Flywheel with ViewModel; call `stateReserve.terminate()` in `onCleared()`
 - Provide `CoroutineScope` with `Dispatchers.Default + SupervisorJob()` (e.g. `getDefaultScope()`); do **not** use `viewModelScope` for StateReserve
 - Collect `states` in `lifecycleScope.launchWhenStarted` or `repeatOnLifecycle(Lifecycle.State.STARTED)`
@@ -291,7 +295,7 @@ val reducer = reducerForAction<MaterialAction, MaterialState> { action, state ->
 
 ### Apple (Swift / SwiftUI)
 
-- **Dependency:** Swift Package Manager — `.package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.2.0")`
+- **Dependency:** Swift Package Manager — `.package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.3.0")`
 - `StateReserveHolder` helps create `StateReserve` from Swift
 - State must implement `Equatable` and `Hashable` for `ignoreDuplicateState` behavior on Objective-C interop
 - Set `ignoreDuplicateState = false` when State is defined in Swift/Objective-C
@@ -309,8 +313,8 @@ val reducer = reducerForAction<MaterialAction, MaterialState> { action, state ->
 | Do | Don't |
 |----|-------|
 | Use immutable State (data class, `val`, `copy()`) | Use `MutableMap`, `MutableList`, or mutable properties in State |
-| Use `setState { }` or delta actions for collection updates when concurrency is possible | Replace entire collections from SideEffects when multiple can run concurrently |
-| Keep `setState` transforms fast and pure (precompute in the SideEffect) | Do I/O or heavy iteration inside a `setState` transform |
+| Use `ReduceAction` deltas for collection updates when concurrency is possible | Replace entire collections from SideEffects when multiple can run concurrently |
+| Keep `ReduceAction.reduce()` fast and pure (precompute in the SideEffect) | Do I/O or heavy iteration inside a `ReduceAction.reduce()` |
 | Put API/DB/navigation in SideEffect | Put I/O or async logic in Reducer or Middleware |
 | Call `terminate()` when StateReserve is no longer needed | Forget to cancel scope / terminate |
 | Use `getDefaultScope()` or `Dispatchers.Default + SupervisorJob()` for StateReserve | **Android:** Use `viewModelScope` or `Dispatchers.Main` for StateReserve scope |

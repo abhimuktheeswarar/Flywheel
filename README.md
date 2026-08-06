@@ -30,7 +30,7 @@ kotlin {
   sourceSets {
       val commonMain by getting {
           dependencies {
-              implementation("com.msabhi:flywheel:1.2.0")
+              implementation("com.msabhi:flywheel:1.3.0")
           }
       }
   }
@@ -42,7 +42,7 @@ kotlin {
 ```Kotlin
 dependencies {
 
-    implementation("com.msabhi:flywheel-android:1.2.0")
+    implementation("com.msabhi:flywheel-android:1.3.0")
 }
 ```
 
@@ -66,7 +66,7 @@ import PackageDescription
 let package = Package(
     name: "YOUR_PROJECT_NAME",
     dependencies: [
-        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.2.0"),
+        .package(url: "https://github.com/abhimuktheeswarar/Flywheel.git", from: "1.3.0"),
     ]
 )
 ```
@@ -144,10 +144,14 @@ This is how a simple counter example looks like.
     stateReserve.dispatch(IncrementAction)
     ```
 
-7. To update the state from concurrent code (e.g. multiple SideEffects), use `setState`. The transform is applied atomically against the **current** state on the state machine, so concurrent updates compose instead of overwriting each other. Do the heavy computation first, then apply only the precomputed result in the transform.
+7. To update the state based on its current value (e.g. from concurrent SideEffects), dispatch a `ReduceAction` — an action that carries a delta and its own merge. Its `reduce` is applied atomically against the **current** state on the state machine, so concurrent updates compose instead of overwriting each other. Do the heavy computation first, then dispatch only the precomputed delta.
 
     ```Kotlin
-    stateReserve.setState { copy(counter = counter + 1) }
+    data class AddToCountAction(val amount: Int) : ReduceAction<CounterState> {
+        override fun reduce(state: CounterState) = state.copy(counter = state.counter + amount)
+    }
+
+    stateReserve.dispatch(AddToCountAction(5))
     ```
 
 

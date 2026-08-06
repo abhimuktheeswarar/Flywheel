@@ -105,7 +105,8 @@ class ConcurrentStateModificationTest {
 
         // Documents the lost-update bug: only one SideEffect's changes survive
         // because the raw reducer replaces the entire map each time (last writer wins).
-        // The fix is setState { } (see SetStateTest) or delta actions (see ConcurrentDeltaDispatchTest).
+        // The fix is a self-reducing delta action (see ReduceActionTest) or a delta action
+        // merged in the reducer (see ConcurrentDeltaDispatchTest).
         assertTrue(
             finalState.items.size < 10,
             "Expected fewer than 10 entries due to lost-update bug, but got ${finalState.items.size}."

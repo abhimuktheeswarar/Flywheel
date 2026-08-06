@@ -40,10 +40,6 @@ abstract class SideEffect<S : State>(
         stateReserve.dispatch(action)
     }
 
-    fun setState(name: String? = null, reducer: S.() -> S) {
-        stateReserve.setState(name, reducer)
-    }
-
     fun state(): S = stateReserve.state()
 
     suspend fun awaitState(): S = stateReserve.awaitState()

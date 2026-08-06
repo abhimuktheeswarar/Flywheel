@@ -17,6 +17,7 @@
 package com.msabhi.flywheel.common
 
 import com.msabhi.flywheel.Action
+import com.msabhi.flywheel.ReduceAction
 import com.msabhi.flywheel.State
 
 sealed interface CollectionAction : Action {
@@ -49,3 +50,12 @@ data class CollectionState(
     val favorites: Set<String> = emptySet(),
     val label: String = "",
 ) : State
+
+/**
+ * Self-reducing delta action: carries only the entries to add and merges them
+ * into the current state's map on the state machine.
+ */
+data class MergeItemsAction(val entries: Map<String, Int>) : ReduceAction<CollectionState> {
+    override fun reduce(state: CollectionState): CollectionState =
+        state.copy(items = state.items + entries)
+}

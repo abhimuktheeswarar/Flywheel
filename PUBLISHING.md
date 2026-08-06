@@ -103,7 +103,7 @@ Consumers add `https://github.com/abhimuktheeswarar/Flywheel.git` and select the
 
 ### Version alignment
 
-The version is defined in one place: `gradle/libs.versions.toml` (key `flywheel`). Ensure it matches the release tag (e.g. `v1.2.0`).
+The version is defined in one place: `gradle/libs.versions.toml` (key `flywheel`). Ensure it matches the release tag (e.g. `v1.3.0`).
 
 ### Caveats
 

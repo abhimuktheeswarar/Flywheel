@@ -68,16 +68,24 @@ private object ForceDistinctAction : Action
 private class BarrierAction(val deferred: CompletableDeferred<Unit>) : Action
 
 /**
- * An [Action] carrying a state transform that the state machine applies atomically
- * against the current state. Created via [StateReserve.setState]. Unlike normal actions
- * it bypasses the user [Reduce] function; everything else (FIFO ordering, middleware,
- * actions/actionStates emission) behaves like a regular action.
+ * An [Action] that carries its own state transform. The state machine applies [reduce]
+ * against the **current** state instead of passing the action through the user [Reduce]
+ * function; everything else (FIFO ordering, middleware, actions/actionStates emission)
+ * behaves like a regular action.
+ *
+ * Use it for read-modify-write updates from concurrent code — typically a data class
+ * whose properties carry a precomputed delta and whose [reduce] merges the delta into
+ * the current state. Computing a new value from a state snapshot and dispatching it as
+ * a full replacement can silently lose concurrent updates (last writer wins); a
+ * [ReduceAction] applies against the state as it is at execution time, so concurrent
+ * updates compose.
+ *
+ * [reduce] runs on the state machine: keep it fast and pure. Do heavy computation in
+ * the SideEffect first, then dispatch the precomputed result. A throwing [reduce]
+ * leaves the state unchanged (same contract as a throwing reducer).
  */
-class SetStateAction<S : State> internal constructor(
-    val name: String? = null,
-    val reducer: S.() -> S,
-) : Action {
-    override fun toString(): String = "SetStateAction(${name ?: "anonymous"})"
+interface ReduceAction<S : State> : Action {
+    fun reduce(state: S): S
 }
 
 
@@ -286,9 +294,9 @@ private fun <S : State> CoroutineScope.stateMachine(
 
             inputActions.onReceive { action ->
                 runCatching {
-                    if (action is SetStateAction<*>) {
+                    if (action is ReduceAction<*>) {
                         @Suppress("UNCHECKED_CAST")
-                        (action as SetStateAction<S>).reducer(state)
+                        (action as ReduceAction<S>).reduce(state)
                     } else {
                         reduce(action, state)
                     }
@@ -422,7 +430,7 @@ class StateReserve<S : State>(
     }
 
     private fun dispatcher(action: Action) {
-        if (config.debugMode && config.assertStateValues && action !is SetStateAction<*>) {
+        if (config.debugMode && config.assertStateValues && action !is ReduceAction<*>) {
             assertStateValues(action, state(), reduce, mutableStateChecker)
         }
         mutableActions.tryEmit(action)
@@ -435,21 +443,6 @@ class StateReserve<S : State>(
      */
     fun dispatch(action: Action) {
         actionsChannel.trySend(action)
-    }
-
-    /**
-     * Atomically updates the state by applying [reducer] to the current state on the
-     * state-machine coroutine. Use this instead of read-modify-write via [state],
-     * [awaitState], or [actionStates] snapshots — computing a new value from a snapshot
-     * and dispatching it can silently lose concurrent updates (last writer wins).
-     * FIFO-ordered with [dispatch]. Keep [reducer] fast and pure: do heavy computation
-     * in the SideEffect first, then apply the precomputed result here. A throwing
-     * [reducer] leaves the state unchanged (same contract as a throwing reducer).
-     * The optional [name] is used in [toString] of the dispatched [SetStateAction]
-     * to identify the update in action logs.
-     */
-    fun setState(name: String? = null, reducer: S.() -> S) {
-        dispatch(SetStateAction(name, reducer))
     }
 
     /**

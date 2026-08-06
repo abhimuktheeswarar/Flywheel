@@ -20,6 +20,9 @@ import com.msabhi.flywheel.attachments.DispatcherProviderImpl
 import com.msabhi.flywheel.attachments.SideEffect
 import com.msabhi.flywheel.common.CollectionAction
 import com.msabhi.flywheel.common.CollectionState
+import com.msabhi.flywheel.common.DoubleCountAction
+import com.msabhi.flywheel.common.FailingReduceAction
+import com.msabhi.flywheel.common.MergeItemsAction
 import com.msabhi.flywheel.common.TestCounterAction
 import com.msabhi.flywheel.common.TestCounterState
 import kotlinx.coroutines.*
@@ -30,15 +33,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Tests for [StateReserve.setState] — transform-carrying actions applied atomically
- * against the current state on the state-machine coroutine.
+ * Tests for [ReduceAction] — self-reducing actions whose transform is applied by the
+ * state machine against the current state.
  *
  * The concurrent scenario mirrors [ConcurrentStateModificationTest], which documents
- * the lost-update bug of full-map replacement. With setState, each SideEffect
- * dispatches the *operation* (merge my delta) instead of a snapshot-derived value,
- * so both SideEffects' changes survive regardless of interleaving.
+ * the lost-update bug of full-map replacement. With a [ReduceAction] delta, each
+ * SideEffect dispatches the *operation* (merge my entries) instead of a
+ * snapshot-derived value, so both SideEffects' changes survive regardless of
+ * interleaving.
  */
-class SetStateTest {
+class ReduceActionTest {
 
     private val counterReduce: Reduce<TestCounterState> = { action, state ->
         when (action) {
@@ -75,8 +79,8 @@ class SetStateTest {
                         delay(processingDelayMs)
                         // Heavy computation happens here, off the state machine.
                         val delta = buildMap { repeat(keyCount) { i -> put("$keyPrefix-$i", i) } }
-                        // Only the cheap merge runs on the state machine, against the CURRENT state.
-                        setState("merge-$keyPrefix") { copy(items = items + delta) }
+                        // Dispatch the operation; its reduce() merges into the CURRENT state.
+                        dispatch(MergeItemsAction(delta))
                         onCompleted.complete(Unit)
                     }
                 }
@@ -85,7 +89,7 @@ class SetStateTest {
     }
 
     @Test
-    fun testConcurrentSetStateConvergesToAllEntries() = runBlocking {
+    fun testConcurrentReduceActionsConvergeToAllEntries() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         val config = StateReserveConfig(scope = scope, debugMode = false)
         val stateReserve = StateReserve(
@@ -118,7 +122,7 @@ class SetStateTest {
 
         assertEquals(
             10, finalState.items.size,
-            "Expected all 10 entries to survive with setState, but got ${finalState.items.size}."
+            "Expected all 10 entries to survive with ReduceAction deltas, but got ${finalState.items.size}."
         )
         assertEquals(5, aKeys.size, "All of SideEffect A's keys should survive.")
         assertEquals(5, bKeys.size, "All of SideEffect B's keys should survive.")
@@ -127,29 +131,29 @@ class SetStateTest {
     }
 
     @Test
-    fun testSetStateAndDispatchAreFifoOrdered() = runBlocking {
+    fun testReduceActionAndDispatchAreFifoOrdered() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         val stateReserve = counterStateReserve(scope)
 
         stateReserve.dispatch(TestCounterAction.IncrementAction)
-        stateReserve.setState("double") { copy(count = count * 2) }
+        stateReserve.dispatch(DoubleCountAction)
         stateReserve.dispatch(TestCounterAction.IncrementAction)
 
-        // (0 + 1) * 2 + 1 = 3 only if the transform runs in FIFO order with dispatches
+        // (0 + 1) * 2 + 1 = 3 only if the ReduceAction runs in FIFO order with the others
         assertEquals(3, stateReserve.awaitState().count)
 
         scope.cancel()
     }
 
     @Test
-    fun testThrowingSetStateLeavesStateUnchangedAndMachineAlive() = runBlocking {
+    fun testThrowingReduceActionLeavesStateUnchangedAndMachineAlive() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         val stateReserve = counterStateReserve(scope)
 
-        stateReserve.setState("boom") { throw IllegalStateException("boom") }
+        stateReserve.dispatch(FailingReduceAction("boom"))
         stateReserve.dispatch(TestCounterAction.IncrementAction)
 
-        // The throwing transform is swallowed (same contract as a throwing reducer)
+        // The throwing reduce() is swallowed (same contract as a throwing reducer)
         // and the state machine keeps processing subsequent actions.
         assertEquals(1, stateReserve.awaitState().count)
 
@@ -157,9 +161,15 @@ class SetStateTest {
     }
 
     @Test
-    fun testSetStateEmitsInActionsAndActionStatesOnce() = runBlocking {
+    fun testReduceActionEmitsInActionsAndActionStatesOnce() = runBlocking {
         val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-        val stateReserve = counterStateReserve(scope)
+        val config = StateReserveConfig(scope = scope, debugMode = false)
+        val stateReserve = StateReserve(
+            initialState = InitialState.set(CollectionState()),
+            reduce = { _, state: CollectionState -> state },
+            config = config,
+            middlewares = null
+        )
 
         val actionsSeen = mutableListOf<Action>()
         val actionStatesSeen = mutableListOf<Action>()
@@ -170,22 +180,22 @@ class SetStateTest {
         // Ensure collectors have subscribed (SharedFlow has no replay)
         delay(50)
 
-        stateReserve.setState("first") { copy(count = count + 1) }
-        stateReserve.setState("second") { copy(count = count + 1) }
+        stateReserve.dispatch(MergeItemsAction(mapOf("x" to 1)))
+        stateReserve.dispatch(MergeItemsAction(mapOf("y" to 2)))
 
-        assertEquals(2, stateReserve.awaitState().count)
+        assertEquals(mapOf("x" to 1, "y" to 2), stateReserve.awaitState().items)
         delay(50)
 
         actionsJob.cancelAndJoin()
         actionStatesJob.cancelAndJoin()
 
         assertEquals(
-            2, actionsSeen.filterIsInstance<SetStateAction<*>>().size,
-            "Each setState call should appear exactly once in the actions flow."
+            2, actionsSeen.filterIsInstance<ReduceAction<*>>().size,
+            "Each ReduceAction dispatch should appear exactly once in the actions flow."
         )
         assertEquals(
-            2, actionStatesSeen.filterIsInstance<SetStateAction<*>>().size,
-            "Each setState call should appear exactly once in the actionStates flow."
+            2, actionStatesSeen.filterIsInstance<ReduceAction<*>>().size,
+            "Each ReduceAction dispatch should appear exactly once in the actionStates flow."
         )
 
         scope.cancel()
@@ -193,12 +203,12 @@ class SetStateTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testDebugModeDoesNotRunAssertForSetState() = runTest(UnconfinedTestDispatcher()) {
+    fun testDebugModeDoesNotRunAssertForReduceAction() = runTest(UnconfinedTestDispatcher()) {
         var caughtException: Throwable? = null
         val handler = CoroutineExceptionHandler { _, throwable -> caughtException = throwable }
         val scope =
             CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher(testScheduler) + handler)
-        // Reducer that is impure for unknown actions: without the SetStateAction exemption,
+        // Reducer that is impure for unknown actions: without the ReduceAction exemption,
         // assertStateValues would run it twice and throw "Impure reducer used!".
         val reduce: Reduce<TestCounterState> = { action, state ->
             when (action) {
@@ -208,9 +218,10 @@ class SetStateTest {
         }
         val stateReserve = counterStateReserve(scope, debugMode = true, reduce = reduce)
 
-        stateReserve.setState("increment") { copy(count = count + 100) }
+        stateReserve.dispatch(TestCounterAction.IncrementAction)
+        stateReserve.dispatch(DoubleCountAction)
 
-        assertNull(caughtException, "assertStateValues must not run for SetStateAction")
-        assertEquals(100, stateReserve.awaitState().count)
+        assertNull(caughtException, "assertStateValues must not run for ReduceAction")
+        assertEquals(2, stateReserve.awaitState().count)
     }
 }
