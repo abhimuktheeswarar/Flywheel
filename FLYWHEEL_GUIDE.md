@@ -207,9 +207,9 @@ reduce = { action, state ->
 A `ReduceAction` is a normal, typed, named action that carries a **delta** in its properties and its own `reduce(state)` merge. The state machine applies `reduce` against the **current** state — not the snapshot the SideEffect saw — so concurrent updates compose instead of overwriting each other. Being a regular action, it stays part of the flow: middleware sees it, it appears in `actions`/`actionStates`, and other SideEffects can react to it.
 
 ```kotlin
-// ✅ Correct — ReduceActionTest proves both SideEffects' changes survive
-data class MergeItemsAction(val entries: Map<String, Int>) : ReduceAction<CollectionState> {
-    override fun reduce(state: CollectionState) = state.copy(items = state.items + entries)
+// ✅ Correct — the library's ReduceActionTest proves both SideEffects' changes survive
+data class MergeItemsAction(val entries: Map<String, Int>) : ReduceAction<ItemsState> {
+    override fun reduce(state: ItemsState) = state.copy(items = state.items + entries)
 }
 
 // In the SideEffect: heavy computation stays here, off the state machine
@@ -225,13 +225,13 @@ Rules for `reduce()`: keep it **fast and pure** — no I/O, no heavy iteration, 
 Equivalent safety with the merge living in the central reducer instead of the action — useful when one reducer handles a family of deltas:
 
 ```kotlin
-// ✅ Correct — ConcurrentDeltaDispatchTest
-sealed interface CollectionAction : Action {
-    data class PutItems(val entries: Map<String, Int>) : CollectionAction  // Delta
-    data class RemoveItems(val keys: Set<String>) : CollectionAction       // Delta
+// ✅ Correct — the library's ConcurrentDeltaDispatchTest proves this pattern
+sealed interface ItemsAction : Action {
+    data class PutItems(val entries: Map<String, Int>) : ItemsAction  // Delta
+    data class RemoveItems(val keys: Set<String>) : ItemsAction       // Delta
 }
 
-reduce = reducerForAction<CollectionAction, CollectionState> { action, state ->
+reduce = reducerForAction<ItemsAction, ItemsState> { action, state ->
     when (action) {
         is PutItems -> state.copy(items = state.items + action.entries)
         is RemoveItems -> state.copy(items = state.items - action.keys)
@@ -240,7 +240,7 @@ reduce = reducerForAction<CollectionAction, CollectionState> { action, state ->
 }
 ```
 
-**Delta patterns (from `TestCollectionState`):** Map → `PutItems(entries)`, `RemoveItems(keys)`; merge with `state.items + action.entries` or `state.items - action.keys`. List → `AddTags(tags)`, `SetTagAt(updates)`, `RemoveTagAt(indices)`. Set → `AddFavorites(elements)`, `RemoveFavorites(elements)`, `ToggleFavorites(elements)`. Always merge into current state in the reducer.
+**Delta shapes by field type:** Map → put/remove entries by key (`state.items + action.entries`, `state.items - action.keys`). Set → add/remove elements (`+`/`-`). List → operate by stable element IDs (`filterNot { it.id in action.ids }`, upsert by id) or by an anchor resolved inside the merge — never carry snapshot-derived indexes. Scalars → carry the operation (`AddToCount(amount)`), not the snapshot-computed result. Always merge into the current state.
 
 ---
 
